@@ -92,7 +92,7 @@ export default function HomePage() {
         }}
       >
         <div>
-          <h1 className="text-xl font-bold gold-text-gradient leading-none">
+          <h1 className="text-2xl font-bold gold-text-gradient leading-none">
             Dark Daulat AI
           </h1>
           {user && (
@@ -146,10 +146,10 @@ export default function HomePage() {
               }}
             >
               {isLoading ? (
-                <div className="animate-shimmer h-4 w-12 rounded mb-1" />
+                <div className="animate-shimmer h-5 w-14 rounded mb-1" />
               ) : (
                 <span
-                  className="text-base font-bold leading-tight"
+                  className="text-lg font-bold leading-tight"
                   style={{
                     color: card.gold
                       ? "oklch(0.86 0.14 85)"
@@ -161,7 +161,7 @@ export default function HomePage() {
                 </span>
               )}
               <span
-                className="text-[10px] mt-1 leading-none"
+                className="text-xs mt-1 leading-none"
                 style={{ color: "oklch(0.52 0.01 85)" }}
               >
                 {card.label}
@@ -169,6 +169,15 @@ export default function HomePage() {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Divider */}
+        <div
+          className="h-px w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, oklch(0.28 0.04 85 / 0.5), transparent)",
+          }}
+        />
 
         {/* Weekly Chart */}
         <motion.div
@@ -312,7 +321,7 @@ export default function HomePage() {
           }}
         >
           <h3
-            className="text-sm font-bold mb-3"
+            className="text-base font-bold mb-3"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             💡 Kaise Kamayein?
@@ -356,13 +365,13 @@ export default function HomePage() {
                 <span className="text-base">{icon}</span>
                 <div>
                   <p
-                    className="text-xs font-semibold"
+                    className="text-sm font-semibold"
                     style={{ color: "oklch(0.82 0.05 85)" }}
                   >
                     {title}
                   </p>
                   <p
-                    className="text-[10px]"
+                    className="text-xs"
                     style={{ color: "oklch(0.52 0.01 85)" }}
                   >
                     {desc}
@@ -417,13 +426,13 @@ export default function HomePage() {
                 }}
               >
                 <Icon
-                  size={20}
+                  size={24}
                   style={{
                     color: primary ? "oklch(0.08 0 0)" : "oklch(0.78 0.12 85)",
                   }}
                 />
                 <span
-                  className="text-xs font-semibold text-center"
+                  className="text-sm font-semibold text-center"
                   style={{
                     color: primary ? "oklch(0.08 0 0)" : "oklch(0.82 0.05 85)",
                   }}

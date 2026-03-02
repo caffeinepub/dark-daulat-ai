@@ -20,7 +20,11 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login, identity, isLoggingIn, isInitializing } =
     useInternetIdentity();
-  const { data: user, isLoading: userLoading } = useGetUser();
+  const {
+    data: user,
+    isLoading: userLoading,
+    isSuccess: userQueryDone,
+  } = useGetUser();
   const registerMutation = useRegister();
 
   const [showRegister, setShowRegister] = useState(false);
@@ -31,14 +35,15 @@ export default function LoginPage() {
 
   // After auth, check if registered
   useEffect(() => {
-    if (identity && !userLoading) {
+    if (identity && !userLoading && userQueryDone) {
       if (user) {
         navigate({ to: "/" });
-      } else if (user === null) {
+      } else {
+        // user is null = not registered yet
         setShowRegister(true);
       }
     }
-  }, [identity, user, userLoading, navigate]);
+  }, [identity, user, userLoading, userQueryDone, navigate]);
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -56,14 +61,6 @@ export default function LoginPage() {
       return;
     }
     try {
-      // Save email & mobile to localStorage (frontend only)
-      if (identity) {
-        const principal = identity.getPrincipal().toString();
-        localStorage.setItem(
-          `dark-daulat-user-contact-${principal}`,
-          JSON.stringify({ email: email.trim(), mobile: mobile.trim() }),
-        );
-      }
       await registerMutation.mutateAsync({
         name: name.trim(),
         referralCode: referralCode.trim() || null,
@@ -286,11 +283,21 @@ export default function LoginPage() {
               className="space-y-5"
             >
               <div className="text-center">
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3"
+                  style={{
+                    background: "oklch(0.55 0.18 145 / 0.15)",
+                    border: "1px solid oklch(0.55 0.18 145 / 0.35)",
+                    color: "oklch(0.72 0.18 145)",
+                  }}
+                >
+                  ✅ Device Verify Ho Gaya
+                </div>
                 <h2 className="text-xl font-bold text-foreground mb-1">
-                  Account Banao
+                  Naya Account Banao
                 </h2>
                 <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
-                  Apna naam aur referral code daalo
+                  Step 2: Apni details daalo
                 </p>
               </div>
 

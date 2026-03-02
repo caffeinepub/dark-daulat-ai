@@ -18,13 +18,18 @@ import { useInternetIdentity } from "./useInternetIdentity";
 
 export function useGetUser() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
   return useQuery<User | null>({
     queryKey: ["user"],
     queryFn: async () => {
-      if (!actor) return null;
-      return actor.getUser();
+      if (!actor || !identity) return null;
+      try {
+        return await actor.getUser();
+      } catch {
+        return null;
+      }
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!identity,
   });
 }
 

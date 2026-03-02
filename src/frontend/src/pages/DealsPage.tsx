@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Loader2,
   MapPin,
@@ -10,9 +10,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Deal } from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useGetActiveDeals, useTrackShare } from "../hooks/useQueries";
 
 const SAMPLE_DEALS: Deal[] = [
@@ -219,7 +220,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
 
         {/* Commission badge */}
         <div
-          className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold"
+          className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold"
           style={{
             background:
               "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
@@ -248,7 +249,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
       {/* Content */}
       <div className="p-3 flex flex-col flex-1 gap-2">
         <h3
-          className="text-sm font-semibold leading-tight line-clamp-2"
+          className="text-base font-bold leading-tight line-clamp-2"
           style={{ color: "oklch(0.92 0.015 85)" }}
         >
           {deal.title}
@@ -256,7 +257,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
 
         <div className="flex items-center justify-between">
           <span
-            className="text-base font-bold"
+            className="text-lg font-bold"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             ₹{formatINR(deal.price)}
@@ -283,7 +284,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           }}
         >
           <span
-            className="text-[10px] font-semibold"
+            className="text-xs font-semibold"
             style={{ color: "oklch(0.70 0.18 145)" }}
           >
             ₹{formatINR(commissionAmount)} Commission
@@ -305,7 +306,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
             type="button"
             onClick={handleBuy}
             data-ocid={`deals.buy_button.${index + 1}`}
-            className="flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all active:scale-95"
+            className="flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-95"
             style={{
               background:
                 "linear-gradient(135deg, oklch(0.45 0.18 160), oklch(0.58 0.20 155))",
@@ -321,7 +322,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
             onClick={handleShare}
             disabled={trackShare.isPending}
             data-ocid={`deals.share_button.${index + 1}`}
-            className="flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all active:scale-95"
+            className="flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-95"
             style={{
               background:
                 "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
@@ -343,9 +344,18 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
 }
 
 export default function DealsPage() {
+  const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
   const { data: dealsFromBackend = [], isLoading } = useGetActiveDeals();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, navigate]);
 
   // Use sample deals when backend has no deals yet
   const isSampleMode = !isLoading && dealsFromBackend.length === 0;
@@ -382,9 +392,9 @@ export default function DealsPage() {
         }}
       >
         <div className="flex items-center gap-2 mb-3">
-          <Tag size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
+          <Tag size={24} style={{ color: "oklch(0.78 0.12 85)" }} />
           <h1
-            className="text-lg font-bold"
+            className="text-xl font-bold"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             AI Deals

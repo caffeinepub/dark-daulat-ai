@@ -34,6 +34,13 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { clear, identity } = useInternetIdentity();
   const { data: user, isLoading } = useGetUser();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, navigate]);
   const { data: leaderboard = [], isLoading: lbLoading } = useGetLeaderboard();
   const { data: affiliateAccount, isLoading: affiliateLoading } =
     useGetAffiliateAccount();
@@ -122,9 +129,9 @@ export default function ProfilePage() {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <User size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
+            <User size={24} style={{ color: "oklch(0.78 0.12 85)" }} />
             <h1
-              className="text-lg font-bold"
+              className="text-xl font-bold"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
               Profile
@@ -189,7 +196,7 @@ export default function ProfilePage() {
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-base text-foreground truncate">
+                    <h2 className="font-bold text-lg text-foreground truncate">
                       {user?.name || "User"}
                     </h2>
                     {user?.isAdmin && (
@@ -200,10 +207,10 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <p
-                    className="text-xs"
-                    style={{ color: "oklch(0.62 0.01 85)" }}
+                    className="text-xs font-mono"
+                    style={{ color: "oklch(0.52 0.01 85)" }}
                   >
-                    {identity?.getPrincipal().toString().slice(0, 20)}...
+                    {identity?.getPrincipal().toString().slice(0, 24)}...
                   </p>
                 </>
               )}
@@ -229,13 +236,13 @@ export default function ProfilePage() {
               ].map(({ label, value }) => (
                 <div key={label} className="text-center">
                   <p
-                    className="font-bold text-sm"
+                    className="font-bold text-base"
                     style={{ color: "oklch(0.86 0.14 85)" }}
                   >
                     {value}
                   </p>
                   <p
-                    className="text-[9px] mt-0.5"
+                    className="text-xs mt-0.5"
                     style={{ color: "oklch(0.52 0.01 85)" }}
                   >
                     {label}
@@ -261,10 +268,10 @@ export default function ProfilePage() {
             }}
           >
             <h3
-              className="font-bold text-sm mb-3"
+              className="font-bold text-base mb-3"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
-              Aapka Referral Code
+              🎁 Aapka Referral Code
             </h3>
 
             <div
@@ -275,7 +282,7 @@ export default function ProfilePage() {
               }}
             >
               <span
-                className="text-base font-bold font-mono tracking-widest"
+                className="text-xl font-bold font-mono tracking-widest"
                 style={{ color: "oklch(0.86 0.14 85)" }}
               >
                 {user.referralCode}
@@ -332,12 +339,12 @@ export default function ProfilePage() {
           }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <BanknoteIcon size={16} style={{ color: "oklch(0.78 0.12 85)" }} />
+            <BanknoteIcon size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
             <h3
-              className="font-bold text-sm"
+              className="font-bold text-base"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
-              Mera Payout Account
+              💳 Mera Payout Account
             </h3>
           </div>
 
@@ -478,12 +485,12 @@ export default function ProfilePage() {
           data-ocid="profile.leaderboard_list"
         >
           <div className="flex items-center gap-2 mb-3">
-            <Trophy size={18} style={{ color: "oklch(0.78 0.12 85)" }} />
+            <Trophy size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
             <h3
-              className="font-bold text-sm"
+              className="font-bold text-base"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
-              Top Earners Leaderboard
+              🏆 Top Earners Leaderboard
             </h3>
           </div>
 

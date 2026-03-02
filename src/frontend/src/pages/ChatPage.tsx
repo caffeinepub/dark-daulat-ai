@@ -1,11 +1,12 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Loader2, MessageCircle, Send, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Bot, Loader2, Send, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Message } from "../backend.d";
 import { MessageRole } from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAddMessage,
   useClearMessages,
@@ -52,7 +53,7 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
         className={`max-w-[80%] flex flex-col ${isUser ? "items-end" : "items-start"}`}
       >
         <div
-          className="px-4 py-2.5 rounded-2xl text-sm leading-relaxed"
+          className="px-4 py-2.5 rounded-2xl text-base leading-relaxed"
           style={
             isUser
               ? {
@@ -74,7 +75,7 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
           {msg.message}
         </div>
         <span
-          className="text-[10px] mt-1 px-1"
+          className="text-xs mt-1 px-1"
           style={{ color: "oklch(0.38 0.01 85)" }}
         >
           {formatTime(msg.timestamp)}
@@ -85,11 +86,20 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
 }
 
 export default function ChatPage() {
+  const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
   const { data: messages = [], isLoading } = useGetMessages();
   const addMessage = useAddMessage();
   const clearMessages = useClearMessages();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, navigate]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on messages change
   useEffect(() => {
@@ -117,7 +127,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.5rem)]">
+    <div className="flex flex-col h-[calc(100vh-5.5rem)]">
       {/* Header */}
       <header
         className="px-4 py-4 flex items-center justify-between shrink-0"
@@ -142,12 +152,12 @@ export default function ChatPage() {
           </div>
           <div>
             <h1
-              className="text-sm font-bold"
+              className="text-base font-bold"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
               AI Assistant
             </h1>
-            <p className="text-[10px]" style={{ color: "oklch(0.52 0.01 85)" }}>
+            <p className="text-xs" style={{ color: "oklch(0.52 0.01 85)" }}>
               Online • Dark Daulat AI
             </p>
           </div>
@@ -321,7 +331,7 @@ export default function ChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             data-ocid="chat.message_input"
-            className="flex-1 h-11 rounded-xl text-sm"
+            className="flex-1 h-12 rounded-xl text-base"
             style={{
               background: "oklch(0.12 0 0)",
               border: "1px solid oklch(0.28 0.04 85 / 0.5)",
@@ -339,7 +349,7 @@ export default function ChatPage() {
             onClick={handleSend}
             disabled={!input.trim() || addMessage.isPending}
             data-ocid="chat.send_button"
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40 active:scale-95"
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40 active:scale-95"
             style={{
               background: input.trim()
                 ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"

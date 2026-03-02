@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowDownCircle,
   CheckCircle,
@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type {
   Transaction,
@@ -23,6 +23,7 @@ import {
   TransactionStatus as TxStatus,
   TransactionType as TxType,
 } from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useGetTransactions,
   useGetUser,
@@ -107,11 +108,20 @@ function TypeLabel({ type }: { type: TransactionType }) {
 }
 
 export default function WalletPage() {
+  const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
   const { data: user, isLoading: userLoading } = useGetUser();
   const { data: transactions = [], isLoading: txLoading } =
     useGetTransactions();
   const withdrawMutation = useRequestWithdrawal();
   const [withdrawAmount, setWithdrawAmount] = useState("");
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, navigate]);
 
   const withdrawAmountNum = Number(withdrawAmount);
   const isValidAmount =
@@ -174,9 +184,9 @@ export default function WalletPage() {
         }}
       >
         <div className="flex items-center gap-2">
-          <Wallet size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
+          <Wallet size={24} style={{ color: "oklch(0.78 0.12 85)" }} />
           <h1
-            className="text-lg font-bold"
+            className="text-xl font-bold"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             Meri Wallet
@@ -282,7 +292,7 @@ export default function WalletPage() {
               style={{ color: "oklch(0.78 0.12 85)" }}
             />
             <h3
-              className="font-bold text-sm"
+              className="font-bold text-base"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
               Withdrawal Request
@@ -423,7 +433,7 @@ export default function WalletPage() {
           data-ocid="wallet.transaction_list"
         >
           <h3
-            className="font-bold text-sm mb-3"
+            className="font-bold text-base mb-3"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             Transaction History
@@ -470,14 +480,14 @@ export default function WalletPage() {
                     </div>
                     {tx.note && (
                       <p
-                        className="text-[10px] truncate"
+                        className="text-xs truncate"
                         style={{ color: "oklch(0.45 0.01 85)" }}
                       >
                         {tx.note}
                       </p>
                     )}
                     <p
-                      className="text-[10px] mt-0.5"
+                      className="text-xs mt-0.5"
                       style={{ color: "oklch(0.38 0.01 85)" }}
                     >
                       {formatDate(tx.timestamp)}

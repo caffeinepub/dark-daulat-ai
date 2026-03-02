@@ -40,7 +40,7 @@ export default function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="flex items-center justify-around h-[4.5rem] max-w-lg mx-auto px-2">
+      <div className="flex items-center justify-around h-[5.5rem] max-w-lg mx-auto px-2">
         {navItems.map(({ path, label, icon: Icon, ocid }) => {
           const isActive = currentPath === path;
           return (
@@ -48,11 +48,11 @@ export default function BottomNav() {
               key={path}
               to={path}
               data-ocid={ocid}
-              className="flex flex-col items-center gap-1 flex-1 py-2 group"
+              className="flex flex-col items-center gap-1.5 flex-1 py-2 group"
             >
               <motion.div
                 className="relative flex items-center justify-center"
-                whileTap={{ scale: 0.85 }}
+                whileTap={{ scale: 0.82 }}
                 transition={{ duration: 0.15 }}
               >
                 {isActive && (
@@ -61,9 +61,9 @@ export default function BottomNav() {
                     className="absolute inset-0 rounded-full"
                     style={{
                       background:
-                        "radial-gradient(circle, oklch(0.78 0.12 85 / 0.2) 0%, transparent 70%)",
-                      width: "44px",
-                      height: "44px",
+                        "radial-gradient(circle, oklch(0.78 0.12 85 / 0.25) 0%, transparent 70%)",
+                      width: "54px",
+                      height: "54px",
                       left: "50%",
                       top: "50%",
                       transform: "translate(-50%, -50%)",
@@ -72,20 +72,20 @@ export default function BottomNav() {
                   />
                 )}
                 <Icon
-                  size={22}
+                  size={28}
                   className="relative z-10 transition-colors duration-200"
                   style={{
                     color: isActive
                       ? "oklch(0.86 0.14 85)"
                       : "oklch(0.52 0.01 85)",
                     filter: isActive
-                      ? "drop-shadow(0 0 6px oklch(0.78 0.12 85 / 0.6))"
+                      ? "drop-shadow(0 0 8px oklch(0.78 0.12 85 / 0.7))"
                       : "none",
                   }}
                 />
               </motion.div>
               <span
-                className="text-[10px] font-medium transition-colors duration-200 leading-none"
+                className="text-xs font-medium transition-colors duration-200 leading-none"
                 style={{
                   color: isActive
                     ? "oklch(0.86 0.14 85)"

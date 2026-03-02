@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Calculator,
   IndianRupee,
@@ -9,9 +10,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { ProfitCalculation } from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useCalculateProfit } from "../hooks/useQueries";
 
 function formatINR(val: bigint | number) {
@@ -19,10 +21,19 @@ function formatINR(val: bigint | number) {
 }
 
 export default function CalculatorPage() {
+  const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
   const [price, setPrice] = useState("");
   const [commission, setCommission] = useState("");
   const [result, setResult] = useState<ProfitCalculation | null>(null);
   const calcMutation = useCalculateProfit();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, navigate]);
 
   const handleCalculate = async () => {
     const priceNum = Number(price);
@@ -66,15 +77,15 @@ export default function CalculatorPage() {
         }}
       >
         <div className="flex items-center gap-2">
-          <Calculator size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
+          <Calculator size={24} style={{ color: "oklch(0.78 0.12 85)" }} />
           <h1
-            className="text-lg font-bold"
+            className="text-xl font-bold"
             style={{ color: "oklch(0.86 0.14 85)" }}
           >
             Profit Calculator
           </h1>
         </div>
-        <p className="text-xs mt-0.5" style={{ color: "oklch(0.52 0.01 85)" }}>
+        <p className="text-sm mt-0.5" style={{ color: "oklch(0.52 0.01 85)" }}>
           Deal share karne se pehle profit check karo
         </p>
       </header>
@@ -94,7 +105,7 @@ export default function CalculatorPage() {
           <div>
             <Label
               htmlFor="price"
-              className="text-sm mb-2 block"
+              className="text-base mb-2 block font-semibold"
               style={{ color: "oklch(0.82 0.05 85)" }}
             >
               Product Price (₹)
@@ -126,7 +137,7 @@ export default function CalculatorPage() {
           <div>
             <Label
               htmlFor="commission"
-              className="text-sm mb-2 block"
+              className="text-base mb-2 block font-semibold"
               style={{ color: "oklch(0.82 0.05 85)" }}
             >
               Commission Percentage (%)
