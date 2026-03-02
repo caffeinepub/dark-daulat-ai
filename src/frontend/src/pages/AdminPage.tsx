@@ -1,0 +1,1380 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Principal } from "@icp-sdk/core/principal";
+import {
+  ArrowLeft,
+  BarChart3,
+  Check,
+  Edit2,
+  Link2,
+  Loader2,
+  Plus,
+  Receipt,
+  Settings,
+  ShieldCheck,
+  Tag,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useState } from "react";
+import { toast } from "sonner";
+import type { Deal, Transaction, User } from "../backend.d";
+import {
+  TransactionStatus as TxStatus,
+  TransactionType as TxType,
+} from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import {
+  useAddDeal,
+  useApproveWithdrawal,
+  useCreditCommission,
+  useDeleteDeal,
+  useGetAdminStats,
+  useGetAllAdminAffiliateSettings,
+  useGetAllDeals,
+  useGetAllTransactions,
+  useGetAllUsers,
+  useIsAdmin,
+  useRejectWithdrawal,
+  useSaveAdminAffiliateSettings,
+  useUpdateDeal,
+} from "../hooks/useQueries";
+
+function formatINR(val: bigint | number) {
+  return Number(val).toLocaleString("en-IN");
+}
+function formatDate(ts: bigint) {
+  const ms = Number(ts / 1_000_000n);
+  return new Date(ms).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+interface DealFormData {
+  title: string;
+  imageUrl: string;
+  price: string;
+  affiliateLink: string;
+  commissionPercent: string;
+  trendingTag: string;
+  targetRegion: string;
+  description: string;
+}
+
+const emptyForm: DealFormData = {
+  title: "",
+  imageUrl: "",
+  price: "",
+  affiliateLink: "",
+  commissionPercent: "",
+  trendingTag: "",
+  targetRegion: "",
+  description: "",
+};
+
+function DealForm({
+  initial,
+  onSubmit,
+  onCancel,
+  isPending,
+  isEdit,
+}: {
+  initial?: DealFormData;
+  onSubmit: (d: DealFormData) => void;
+  onCancel: () => void;
+  isPending: boolean;
+  isEdit?: boolean;
+}) {
+  const [form, setForm] = useState<DealFormData>(initial ?? emptyForm);
+  const set =
+    (k: keyof DealFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [k]: e.target.value }));
+
+  const inputStyle = {
+    background: "oklch(0.10 0 0)",
+    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+    color: "oklch(0.96 0.015 85)",
+    fontSize: "14px",
+  };
+
+  return (
+    <div
+      className="space-y-3 p-4 rounded-xl"
+      style={{
+        background: "oklch(0.12 0 0)",
+        border: "1px solid oklch(0.28 0.04 85 / 0.3)",
+      }}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Title *
+          </Label>
+          <Input
+            value={form.title}
+            onChange={set("title")}
+            placeholder="Deal title"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Price (₹) *
+          </Label>
+          <Input
+            type="number"
+            value={form.price}
+            onChange={set("price")}
+            placeholder="1999"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Commission % *
+          </Label>
+          <Input
+            type="number"
+            value={form.commissionPercent}
+            onChange={set("commissionPercent")}
+            placeholder="15"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Affiliate Link *
+          </Label>
+          <Input
+            value={form.affiliateLink}
+            onChange={set("affiliateLink")}
+            placeholder="https://..."
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Image URL
+          </Label>
+          <Input
+            value={form.imageUrl}
+            onChange={set("imageUrl")}
+            placeholder="https://image.jpg"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Trending Tag
+          </Label>
+          <Input
+            value={form.trendingTag}
+            onChange={set("trendingTag")}
+            placeholder="Hot Deal"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Target Region
+          </Label>
+          <Input
+            value={form.targetRegion}
+            onChange={set("targetRegion")}
+            placeholder="Pan India"
+            className="h-9 rounded-lg"
+            style={inputStyle}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label
+            className="text-xs mb-1 block"
+            style={{ color: "oklch(0.62 0.01 85)" }}
+          >
+            Description
+          </Label>
+          <textarea
+            value={form.description}
+            onChange={set("description")}
+            placeholder="Deal description..."
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg text-sm resize-none outline-none"
+            style={inputStyle}
+          />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button
+          onClick={() => onSubmit(form)}
+          disabled={isPending}
+          data-ocid="admin.add_deal_button"
+          className="flex-1 h-9 text-xs rounded-lg"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+            color: "oklch(0.08 0 0)",
+            border: "none",
+          }}
+        >
+          {isPending ? (
+            <Loader2 size={14} className="animate-spin mr-1" />
+          ) : null}
+          {isEdit ? "Update Deal" : "Add Deal"}
+        </Button>
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="flex-1 h-9 text-xs rounded-lg"
+          style={{
+            background: "oklch(0.16 0 0)",
+            border: "1px solid oklch(0.28 0 0)",
+            color: "oklch(0.62 0.01 85)",
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Deals Tab ────────────────────────────────────────────────────────────────
+function DealsTab() {
+  const { data: deals = [], isLoading } = useGetAllDeals();
+  const addDeal = useAddDeal();
+  const updateDeal = useUpdateDeal();
+  const deleteDeal = useDeleteDeal();
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<bigint | null>(null);
+
+  const handleAdd = async (form: DealFormData) => {
+    if (
+      !form.title ||
+      !form.price ||
+      !form.commissionPercent ||
+      !form.affiliateLink
+    ) {
+      toast.error("Title, price, commission, aur link required hain");
+      return;
+    }
+    try {
+      await addDeal.mutateAsync({
+        title: form.title,
+        imageUrl: form.imageUrl,
+        price: BigInt(Math.floor(Number(form.price))),
+        affiliateLink: form.affiliateLink,
+        commissionPercent: BigInt(Math.floor(Number(form.commissionPercent))),
+        trendingTag: form.trendingTag,
+        targetRegion: form.targetRegion,
+        description: form.description,
+      });
+      toast.success("Deal add ho gayi!");
+      setShowForm(false);
+    } catch {
+      toast.error("Deal add fail hui");
+    }
+  };
+
+  const handleUpdate = async (form: DealFormData, id: bigint) => {
+    try {
+      await updateDeal.mutateAsync({
+        id,
+        title: form.title,
+        imageUrl: form.imageUrl,
+        price: BigInt(Math.floor(Number(form.price))),
+        affiliateLink: form.affiliateLink,
+        commissionPercent: BigInt(Math.floor(Number(form.commissionPercent))),
+        trendingTag: form.trendingTag,
+        targetRegion: form.targetRegion,
+        description: form.description,
+      });
+      toast.success("Deal update ho gayi!");
+      setEditingId(null);
+    } catch {
+      toast.error("Update fail hua");
+    }
+  };
+
+  const handleDelete = async (id: bigint) => {
+    if (!confirm("Kya aap sure hain?")) return;
+    try {
+      await deleteDeal.mutateAsync(id);
+      toast.success("Deal delete ho gayi");
+    } catch {
+      toast.error("Delete fail hua");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {!showForm && !editingId && (
+        <Button
+          onClick={() => setShowForm(true)}
+          data-ocid="admin.add_deal_button"
+          className="w-full h-10 text-sm rounded-xl"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+            color: "oklch(0.08 0 0)",
+            border: "none",
+          }}
+        >
+          <Plus size={16} className="mr-1.5" /> Naya Deal Add Karo
+        </Button>
+      )}
+
+      {showForm && (
+        <DealForm
+          onSubmit={handleAdd}
+          onCancel={() => setShowForm(false)}
+          isPending={addDeal.isPending}
+        />
+      )}
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
+            <div key={i} className="animate-shimmer h-20 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="overflow-x-auto rounded-xl"
+          data-ocid="admin.deal_table"
+          style={{ border: "1px solid oklch(0.22 0.01 85)" }}
+        >
+          <table className="w-full text-xs">
+            <thead>
+              <tr
+                style={{
+                  background: "oklch(0.14 0.005 85)",
+                  borderBottom: "1px solid oklch(0.22 0.01 85)",
+                }}
+              >
+                {["Title", "Price", "Comm%", "Shares", "Actions"].map((h) => (
+                  <th
+                    key={h}
+                    className="px-3 py-2 text-left font-semibold"
+                    style={{ color: "oklch(0.62 0.01 85)" }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {deals.map((deal: Deal) =>
+                editingId === deal.id ? (
+                  <tr key={Number(deal.id)}>
+                    <td colSpan={5} className="p-2">
+                      <DealForm
+                        initial={{
+                          title: deal.title,
+                          imageUrl: deal.imageUrl,
+                          price: String(Number(deal.price)),
+                          affiliateLink: deal.affiliateLink,
+                          commissionPercent: String(
+                            Number(deal.commissionPercent),
+                          ),
+                          trendingTag: deal.trendingTag,
+                          targetRegion: deal.targetRegion,
+                          description: deal.description,
+                        }}
+                        onSubmit={(form) => handleUpdate(form, deal.id)}
+                        onCancel={() => setEditingId(null)}
+                        isPending={updateDeal.isPending}
+                        isEdit
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr
+                    key={Number(deal.id)}
+                    style={{ borderBottom: "1px solid oklch(0.16 0 0)" }}
+                  >
+                    <td
+                      className="px-3 py-2.5"
+                      style={{ color: "oklch(0.82 0.05 85)" }}
+                    >
+                      <span className="line-clamp-1 max-w-[120px] block">
+                        {deal.title}
+                      </span>
+                    </td>
+                    <td
+                      className="px-3 py-2.5"
+                      style={{ color: "oklch(0.78 0.12 85)" }}
+                    >
+                      ₹{formatINR(deal.price)}
+                    </td>
+                    <td
+                      className="px-3 py-2.5"
+                      style={{ color: "oklch(0.62 0.01 85)" }}
+                    >
+                      {Number(deal.commissionPercent)}%
+                    </td>
+                    <td
+                      className="px-3 py-2.5"
+                      style={{ color: "oklch(0.62 0.01 85)" }}
+                    >
+                      {Number(deal.shareCount)}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(deal.id)}
+                          className="p-1.5 rounded-lg"
+                          style={{
+                            background: "oklch(0.78 0.12 85 / 0.15)",
+                            border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+                          }}
+                        >
+                          <Edit2
+                            size={11}
+                            style={{ color: "oklch(0.78 0.12 85)" }}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(deal.id)}
+                          className="p-1.5 rounded-lg"
+                          style={{
+                            background: "oklch(0.62 0.22 25 / 0.15)",
+                            border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                          }}
+                        >
+                          <Trash2
+                            size={11}
+                            style={{ color: "oklch(0.68 0.22 25)" }}
+                          />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+          {deals.length === 0 && (
+            <p
+              className="text-center py-6 text-xs"
+              style={{ color: "oklch(0.45 0.01 85)" }}
+            >
+              Koi deal nahi hai
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+function UsersTab() {
+  const { data: users = [], isLoading } = useGetAllUsers();
+  const creditCommission = useCreditCommission();
+  const [creditUserId, setCreditUserId] = useState<Principal | null>(null);
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditNote, setCreditNote] = useState("");
+
+  const handleCredit = async () => {
+    if (!creditUserId || !creditAmount) return;
+    try {
+      await creditCommission.mutateAsync({
+        userId: creditUserId,
+        amount: BigInt(Math.floor(Number(creditAmount))),
+        note: creditNote || "Admin credit",
+      });
+      toast.success("Credit ho gaya!");
+      setCreditUserId(null);
+      setCreditAmount("");
+      setCreditNote("");
+    } catch {
+      toast.error("Credit fail hua");
+    }
+  };
+
+  return (
+    <div
+      className="overflow-x-auto rounded-xl"
+      data-ocid="admin.users_table"
+      style={{ border: "1px solid oklch(0.22 0.01 85)" }}
+    >
+      {isLoading ? (
+        <div className="p-4 space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
+            <div key={i} className="animate-shimmer h-10 rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <table className="w-full text-xs">
+          <thead>
+            <tr
+              style={{
+                background: "oklch(0.14 0.005 85)",
+                borderBottom: "1px solid oklch(0.22 0.01 85)",
+              }}
+            >
+              {["Name", "Code", "Balance", "Earnings", "Admin", "Actions"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    className="px-3 py-2 text-left font-semibold"
+                    style={{ color: "oklch(0.62 0.01 85)" }}
+                  >
+                    {h}
+                  </th>
+                ),
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user: User) => (
+              <tr
+                key={user.referralCode}
+                style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+              >
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.82 0.05 85)" }}
+                >
+                  {user.name}
+                </td>
+                <td
+                  className="px-3 py-2.5 font-mono"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  {user.referralCode}
+                </td>
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.78 0.12 85)" }}
+                >
+                  ₹{formatINR(user.walletBalance)}
+                </td>
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  ₹{formatINR(user.totalEarnings)}
+                </td>
+                <td className="px-3 py-2.5">
+                  {user.isAdmin ? (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: "oklch(0.78 0.12 85 / 0.15)",
+                        color: "oklch(0.86 0.14 85)",
+                      }}
+                    >
+                      Admin
+                    </span>
+                  ) : (
+                    <span style={{ color: "oklch(0.38 0.01 85)" }}>—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCreditUserId(user as unknown as Principal)
+                    }
+                    className="px-2 py-1 rounded-lg text-[10px] font-semibold"
+                    style={{
+                      background: "oklch(0.78 0.12 85 / 0.15)",
+                      color: "oklch(0.86 0.14 85)",
+                      border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+                    }}
+                  >
+                    Credit
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Credit dialog */}
+      {creditUserId !== null && (
+        <div
+          className="p-4 border-t"
+          style={{ borderColor: "oklch(0.22 0.01 85)" }}
+        >
+          <p
+            className="text-xs font-semibold mb-2"
+            style={{ color: "oklch(0.86 0.14 85)" }}
+          >
+            Credit Commission
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              placeholder="Amount ₹"
+              value={creditAmount}
+              onChange={(e) => setCreditAmount(e.target.value)}
+              className="h-9 rounded-lg text-xs"
+              style={{
+                background: "oklch(0.10 0 0)",
+                border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                color: "oklch(0.96 0.015 85)",
+              }}
+            />
+            <Input
+              placeholder="Note"
+              value={creditNote}
+              onChange={(e) => setCreditNote(e.target.value)}
+              className="h-9 rounded-lg text-xs"
+              style={{
+                background: "oklch(0.10 0 0)",
+                border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                color: "oklch(0.96 0.015 85)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleCredit}
+              disabled={creditCommission.isPending}
+              className="px-3 h-9 rounded-lg text-xs font-bold shrink-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                color: "oklch(0.08 0 0)",
+              }}
+            >
+              {creditCommission.isPending ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                "Add"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreditUserId(null)}
+              className="px-3 h-9 rounded-lg text-xs shrink-0"
+              style={{
+                background: "oklch(0.16 0 0)",
+                border: "1px solid oklch(0.22 0.01 85)",
+                color: "oklch(0.62 0.01 85)",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Transactions Tab ─────────────────────────────────────────────────────────
+function TransactionsTab() {
+  const { data: transactions = [], isLoading } = useGetAllTransactions();
+  const approve = useApproveWithdrawal();
+  const reject = useRejectWithdrawal();
+
+  return (
+    <div
+      className="overflow-x-auto rounded-xl"
+      data-ocid="admin.transactions_table"
+      style={{ border: "1px solid oklch(0.22 0.01 85)" }}
+    >
+      {isLoading ? (
+        <div className="p-4 space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
+            <div key={i} className="animate-shimmer h-10 rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <table className="w-full text-xs">
+          <thead>
+            <tr
+              style={{
+                background: "oklch(0.14 0.005 85)",
+                borderBottom: "1px solid oklch(0.22 0.01 85)",
+              }}
+            >
+              {["ID", "Type", "Amount", "Status", "Date", "Actions"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    className="px-3 py-2 text-left font-semibold"
+                    style={{ color: "oklch(0.62 0.01 85)" }}
+                  >
+                    {h}
+                  </th>
+                ),
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx: Transaction) => (
+              <tr
+                key={Number(tx.id)}
+                style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+              >
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.52 0.01 85)" }}
+                >
+                  #{Number(tx.id)}
+                </td>
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.82 0.05 85)" }}
+                >
+                  {tx.transactionType}
+                </td>
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.78 0.12 85)" }}
+                >
+                  ₹{formatINR(tx.amount)}
+                </td>
+                <td className="px-3 py-2.5">
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                    style={{
+                      background:
+                        tx.status === TxStatus.approved
+                          ? "oklch(0.70 0.18 140 / 0.15)"
+                          : tx.status === TxStatus.rejected
+                            ? "oklch(0.62 0.22 25 / 0.15)"
+                            : "oklch(0.75 0.15 80 / 0.15)",
+                      color:
+                        tx.status === TxStatus.approved
+                          ? "oklch(0.75 0.18 140)"
+                          : tx.status === TxStatus.rejected
+                            ? "oklch(0.68 0.22 25)"
+                            : "oklch(0.85 0.15 80)",
+                    }}
+                  >
+                    {tx.status}
+                  </span>
+                </td>
+                <td
+                  className="px-3 py-2.5"
+                  style={{ color: "oklch(0.52 0.01 85)" }}
+                >
+                  {formatDate(tx.timestamp)}
+                </td>
+                <td className="px-3 py-2.5">
+                  {tx.status === TxStatus.pending &&
+                    tx.transactionType === TxType.withdrawal && (
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await approve.mutateAsync(tx.id);
+                              toast.success("Approved!");
+                            } catch {
+                              toast.error("Failed");
+                            }
+                          }}
+                          disabled={approve.isPending}
+                          className="p-1.5 rounded-lg"
+                          style={{
+                            background: "oklch(0.70 0.18 140 / 0.15)",
+                            border: "1px solid oklch(0.70 0.18 140 / 0.3)",
+                          }}
+                        >
+                          <Check
+                            size={11}
+                            style={{ color: "oklch(0.75 0.18 140)" }}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await reject.mutateAsync(tx.id);
+                              toast.success("Rejected");
+                            } catch {
+                              toast.error("Failed");
+                            }
+                          }}
+                          disabled={reject.isPending}
+                          className="p-1.5 rounded-lg"
+                          style={{
+                            background: "oklch(0.62 0.22 25 / 0.15)",
+                            border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                          }}
+                        >
+                          <X
+                            size={11}
+                            style={{ color: "oklch(0.68 0.22 25)" }}
+                          />
+                        </button>
+                      </div>
+                    )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {!isLoading && transactions.length === 0 && (
+        <p
+          className="text-center py-6 text-xs"
+          style={{ color: "oklch(0.45 0.01 85)" }}
+        >
+          Koi transaction nahi hai
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Analytics Tab ────────────────────────────────────────────────────────────
+function AnalyticsTab() {
+  const { data: stats, isLoading } = useGetAdminStats();
+
+  const statCards = stats
+    ? [
+        { label: "Total Users", value: Number(stats.totalUsers), icon: "👥" },
+        { label: "Total Deals", value: Number(stats.totalDeals), icon: "🛍️" },
+        {
+          label: "Commission Paid",
+          value: `₹${formatINR(stats.totalCommissionPaid)}`,
+          icon: "💰",
+        },
+        {
+          label: "Pending Withdrawals",
+          value: Number(stats.totalPendingWithdrawals),
+          icon: "⏳",
+        },
+        {
+          label: "Approved Withdrawals",
+          value: Number(stats.totalApprovedWithdrawals),
+          icon: "✅",
+        },
+      ]
+    : [];
+
+  return (
+    <div>
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
+            <div key={i} className="animate-shimmer h-20 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {statCards.map((card, i) => (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+              className="rounded-xl p-4"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.16 0.01 85))",
+                border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+              }}
+            >
+              <div className="text-xl mb-1.5">{card.icon}</div>
+              <p
+                className="text-base font-bold"
+                style={{ color: "oklch(0.86 0.14 85)" }}
+              >
+                {card.value}
+              </p>
+              <p
+                className="text-[10px] mt-0.5"
+                style={{ color: "oklch(0.52 0.01 85)" }}
+              >
+                {card.label}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Affiliate Settings Tab ───────────────────────────────────────────────────
+function AffiliateTab() {
+  const { data: allSettings = [], isLoading } =
+    useGetAllAdminAffiliateSettings();
+  const saveSettings = useSaveAdminAffiliateSettings();
+
+  const existing = allSettings[0];
+
+  const [platformName, setPlatformName] = useState(
+    existing?.platformName ?? "",
+  );
+  const [affiliateId, setAffiliateId] = useState(existing?.affiliateId ?? "");
+  const [websiteUrl, setWebsiteUrl] = useState(existing?.websiteUrl ?? "");
+  const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [contactEmail, setContactEmail] = useState(
+    existing?.contactEmail ?? "",
+  );
+  const [saved, setSaved] = useState(false);
+
+  // Pre-fill when data loads
+  const [prefilled, setPrefilled] = useState(false);
+  if (!prefilled && existing) {
+    setPlatformName(existing.platformName);
+    setAffiliateId(existing.affiliateId);
+    setWebsiteUrl(existing.websiteUrl);
+    setNotes(existing.notes);
+    setContactEmail(existing.contactEmail ?? "");
+    setPrefilled(true);
+  }
+
+  const inputStyle = {
+    background: "oklch(0.10 0 0)",
+    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+    color: "oklch(0.96 0.015 85)",
+    fontSize: "14px",
+  };
+
+  const handleSave = async () => {
+    if (!platformName || !affiliateId || !websiteUrl) {
+      toast.error("Platform name, Affiliate ID aur Website URL zaroori hain");
+      return;
+    }
+    try {
+      await saveSettings.mutateAsync({
+        id: existing?.id ?? BigInt(1),
+        platformName,
+        affiliateId,
+        websiteUrl,
+        notes,
+        contactEmail: contactEmail || undefined,
+      });
+      setSaved(true);
+      toast.success("Affiliate settings save ho gayi! ✅");
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      toast.error("Save fail hua");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Admin Commission Info Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-4"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.6), oklch(0.18 0.06 85 / 0.4))",
+          border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+        }}
+      >
+        <p
+          className="text-sm font-bold mb-2"
+          style={{ color: "oklch(0.86 0.14 85)" }}
+        >
+          💰 Admin Commission Pool
+        </p>
+        <div className="space-y-1.5">
+          {[
+            "Har withdrawal par 2% platform fee automatically admin pool mein jaati hai",
+            "User ke affiliate account se jo bhi buy/sell hoga, uska 2% admin ko milega",
+            "Ye commission admin ke kharch cover karne ke liye hai (hosting, marketing, etc.)",
+          ].map((text) => (
+            <div key={text} className="flex items-start gap-2">
+              <span
+                className="text-xs mt-0.5"
+                style={{ color: "oklch(0.78 0.12 85)" }}
+              >
+                •
+              </span>
+              <p className="text-xs" style={{ color: "oklch(0.62 0.01 85)" }}>
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Settings Form */}
+      <div
+        className="rounded-xl p-4 space-y-3"
+        style={{
+          background: "oklch(0.12 0 0)",
+          border: "1px solid oklch(0.28 0.04 85 / 0.3)",
+        }}
+      >
+        <p
+          className="text-xs font-semibold mb-1"
+          style={{ color: "oklch(0.86 0.14 85)" }}
+        >
+          Affiliate Platform Settings
+        </p>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+              <div key={i} className="animate-shimmer h-9 rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Platform Name * (Jaise: Amazon Associates)
+                </Label>
+                <Input
+                  value={platformName}
+                  onChange={(e) => setPlatformName(e.target.value)}
+                  data-ocid="admin.affiliate_platform_input"
+                  placeholder="Amazon Associates"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Affiliate ID *
+                </Label>
+                <Input
+                  value={affiliateId}
+                  onChange={(e) => setAffiliateId(e.target.value)}
+                  data-ocid="admin.affiliate_id_input"
+                  placeholder="yourname-21"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Contact Email (Optional)
+                </Label>
+                <Input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  data-ocid="admin.affiliate_email_input"
+                  placeholder="admin@email.com"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Website URL *
+                </Label>
+                <Input
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  data-ocid="admin.affiliate_website_input"
+                  placeholder="https://affiliate.amazon.in"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Notes
+                </Label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  data-ocid="admin.affiliate_notes_textarea"
+                  placeholder="Koi aur info yahan likhein..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg text-sm resize-none outline-none"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={saveSettings.isPending}
+              data-ocid="admin.affiliate_save_button"
+              className="w-full h-9 text-xs rounded-lg"
+              style={
+                saved
+                  ? {
+                      background:
+                        "linear-gradient(135deg, oklch(0.45 0.18 160), oklch(0.58 0.20 155))",
+                      color: "oklch(0.96 0.01 145)",
+                      border: "none",
+                    }
+                  : {
+                      background:
+                        "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                      color: "oklch(0.08 0 0)",
+                      border: "none",
+                    }
+              }
+            >
+              {saveSettings.isPending ? (
+                <Loader2 size={14} className="animate-spin mr-1" />
+              ) : null}
+              {saved ? "✅ Saved!" : "Settings Save Karo"}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Admin Page ──────────────────────────────────────────────────────────
+export default function AdminPage() {
+  const { identity } = useInternetIdentity();
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+
+  if (!identity) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"
+        style={{ background: "oklch(0.06 0 0)" }}
+      >
+        <Toaster
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: "oklch(0.14 0.01 85)",
+              border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+              color: "oklch(0.96 0.015 85)",
+            },
+          }}
+        />
+        <ShieldCheck size={40} style={{ color: "oklch(0.62 0.22 25)" }} />
+        <h2 className="text-xl font-bold text-foreground">Login Required</h2>
+        <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
+          Admin panel access ke liye login karo
+        </p>
+        <a
+          href="/login"
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+            color: "oklch(0.08 0 0)",
+          }}
+        >
+          Login Page
+        </a>
+      </div>
+    );
+  }
+
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2
+          size={32}
+          className="animate-spin"
+          style={{ color: "oklch(0.78 0.12 85)" }}
+        />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"
+        style={{ background: "oklch(0.06 0 0)" }}
+      >
+        <Toaster
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: "oklch(0.14 0.01 85)",
+              border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+              color: "oklch(0.96 0.015 85)",
+            },
+          }}
+        />
+        <ShieldCheck size={40} style={{ color: "oklch(0.62 0.22 25)" }} />
+        <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
+        <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
+          Aapko admin access nahi hai
+        </p>
+        <a
+          href="/"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+          style={{
+            background: "oklch(0.14 0 0)",
+            border: "1px solid oklch(0.22 0.01 85)",
+            color: "oklch(0.62 0.01 85)",
+          }}
+        >
+          <ArrowLeft size={14} /> Home pe jao
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" style={{ background: "oklch(0.07 0 0)" }}>
+      <Toaster
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: "oklch(0.14 0.01 85)",
+            border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+            color: "oklch(0.96 0.015 85)",
+          },
+        }}
+      />
+
+      {/* Header */}
+      <header
+        className="px-4 py-4 sticky top-0 z-40"
+        style={{
+          background: "oklch(0.08 0 0)",
+          borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <a
+              href="/"
+              className="p-1.5 rounded-lg"
+              style={{
+                background: "oklch(0.14 0 0)",
+                border: "1px solid oklch(0.22 0.01 85)",
+              }}
+            >
+              <ArrowLeft size={16} style={{ color: "oklch(0.62 0.01 85)" }} />
+            </a>
+            <div>
+              <h1 className="text-base font-bold gold-text-gradient">
+                Admin Dashboard
+              </h1>
+              <p
+                className="text-[10px]"
+                style={{ color: "oklch(0.52 0.01 85)" }}
+              >
+                Dark Daulat AI
+              </p>
+            </div>
+          </div>
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs"
+            style={{
+              background: "oklch(0.78 0.12 85 / 0.1)",
+              border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+              color: "oklch(0.86 0.14 85)",
+            }}
+          >
+            <Settings size={11} />
+            Admin
+          </div>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className="p-4">
+        <Tabs defaultValue="deals">
+          <TabsList
+            className="w-full h-10 grid grid-cols-5 rounded-xl mb-4"
+            style={{
+              background: "oklch(0.12 0 0)",
+              border: "1px solid oklch(0.22 0.01 85)",
+            }}
+          >
+            {[
+              { value: "deals", icon: Tag, label: "Deals" },
+              { value: "users", icon: Users, label: "Users" },
+              { value: "transactions", icon: Receipt, label: "TXNs" },
+              { value: "analytics", icon: BarChart3, label: "Stats" },
+              { value: "affiliate", icon: Link2, label: "Affl." },
+            ].map(({ value, icon: Icon, label }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                data-ocid={`admin.${value}_tab`}
+                className="rounded-lg text-xs flex items-center gap-1 data-[state=active]:text-foreground"
+                style={{
+                  color: "oklch(0.52 0.01 85)",
+                }}
+              >
+                <Icon size={11} />
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <TabsContent value="deals">
+            <DealsTab />
+          </TabsContent>
+          <TabsContent value="users">
+            <UsersTab />
+          </TabsContent>
+          <TabsContent value="transactions">
+            <TransactionsTab />
+          </TabsContent>
+          <TabsContent value="analytics">
+            <AnalyticsTab />
+          </TabsContent>
+          <TabsContent value="affiliate">
+            <AffiliateTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
