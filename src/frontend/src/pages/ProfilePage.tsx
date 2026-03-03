@@ -32,15 +32,15 @@ function formatINR(val: bigint | number) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { clear, identity } = useInternetIdentity();
+  const { clear, identity, isInitializing } = useInternetIdentity();
   const { data: user, isLoading } = useGetUser();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
   const { data: leaderboard = [], isLoading: lbLoading } = useGetLeaderboard();
   const { data: affiliateAccount, isLoading: affiliateLoading } =
     useGetAffiliateAccount();

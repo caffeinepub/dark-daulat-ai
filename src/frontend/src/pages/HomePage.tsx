@@ -31,17 +31,17 @@ function formatINR(value: number | bigint) {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing } = useInternetIdentity();
   const { data: user, isLoading } = useGetUser();
   const [tipIndex, setTipIndex] = useState(0);
   const [tipVisible, setTipVisible] = useState(true);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
 
   // Auto-rotate tips
   useEffect(() => {

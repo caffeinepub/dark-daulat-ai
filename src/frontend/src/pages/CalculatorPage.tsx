@@ -22,18 +22,18 @@ function formatINR(val: bigint | number) {
 
 export default function CalculatorPage() {
   const navigate = useNavigate();
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing } = useInternetIdentity();
   const [price, setPrice] = useState("");
   const [commission, setCommission] = useState("");
   const [result, setResult] = useState<ProfitCalculation | null>(null);
   const calcMutation = useCalculateProfit();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
 
   const handleCalculate = async () => {
     const priceNum = Number(price);

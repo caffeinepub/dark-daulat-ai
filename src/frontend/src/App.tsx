@@ -5,8 +5,9 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
+  useNavigate,
 } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import BottomNav from "./components/BottomNav";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
@@ -19,8 +20,51 @@ import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import WalletPage from "./pages/WalletPage";
 
+// ─── Loading Screen ───────────────────────────────────────────────────────────
+function LoadingScreen() {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "oklch(0.06 0 0)" }}
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.14 0.03 85), oklch(0.20 0.05 85))",
+            border: "2px solid oklch(0.78 0.12 85 / 0.4)",
+            boxShadow: "0 0 24px oklch(0.78 0.12 85 / 0.2)",
+          }}
+        >
+          <span
+            className="text-2xl font-bold"
+            style={{ color: "oklch(0.86 0.14 85)" }}
+          >
+            ₹
+          </span>
+        </div>
+        <Loader2
+          className="animate-spin"
+          size={28}
+          style={{ color: "oklch(0.78 0.12 85)" }}
+        />
+        <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
+          Dark Daulat AI...
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Root Layout ─────────────────────────────────────────────────────────────
 function RootLayout() {
+  const { isInitializing } = useInternetIdentity();
+
+  if (isInitializing) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Outlet />
@@ -38,8 +82,23 @@ function RootLayout() {
   );
 }
 
-// ─── App Layout (with Bottom Nav) ────────────────────────────────────────────
+// ─── App Layout (with Bottom Nav + Auth Guard) ────────────────────────────────
 function AppLayout() {
+  const { identity, isInitializing } = useInternetIdentity();
+  const navigate = useNavigate();
+
+  // Guard: redirect to login if not authenticated (after initializing)
+  useEffect(() => {
+    if (!isInitializing && !identity) {
+      navigate({ to: "/login" });
+    }
+  }, [identity, isInitializing, navigate]);
+
+  // Show nothing while redirecting to avoid flash
+  if (!isInitializing && !identity) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex-1 pb-nav overflow-y-auto">
@@ -128,26 +187,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// ─── App with Auth Guard ──────────────────────────────────────────────────────
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { identity, isInitializing } = useInternetIdentity();
-
-  useEffect(() => {
-    if (!isInitializing && !identity) {
-      const path = window.location.pathname;
-      if (path !== "/login" && path !== "/admin") {
-        window.location.href = "/login";
-      }
-    }
-  }, [identity, isInitializing]);
-
-  return <>{children}</>;
-}
-
 export default function App() {
-  return (
-    <AuthGuard>
-      <RouterProvider router={router} />
-    </AuthGuard>
-  );
+  return <RouterProvider router={router} />;
 }

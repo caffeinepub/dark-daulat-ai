@@ -18,7 +18,7 @@ import { useGetUser, useRegister } from "../hooks/useQueries";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, identity, isLoggingIn, isInitializing } =
+  const { login, identity, isLoggingIn, isInitializing, isLoginError } =
     useInternetIdentity();
   const {
     data: user,
@@ -33,10 +33,15 @@ export default function LoginPage() {
   const [mobile, setMobile] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
-  // After auth, check if registered
+  // After auth, check if registered — handle both cases: fresh login and existing session
   useEffect(() => {
-    if (identity && !userLoading && userQueryDone) {
+    if (!identity) return; // Not logged in yet, nothing to do
+    if (userLoading) return; // Wait for user query to settle
+
+    // Once query is done (isSuccess = true), decide what to show
+    if (userQueryDone) {
       if (user) {
+        // Existing registered user — go to home
         navigate({ to: "/" });
       } else {
         // user is null = not registered yet
@@ -261,6 +266,21 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
+
+              {/* Login error message */}
+              {isLoginError && (
+                <p
+                  data-ocid="login.error_state"
+                  className="text-center text-xs rounded-lg px-3 py-2"
+                  style={{
+                    color: "oklch(0.70 0.20 25)",
+                    background: "oklch(0.62 0.22 25 / 0.1)",
+                    border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                  }}
+                >
+                  ⚠️ Login fail hua. Dobara try karo ya browser popup allow karo.
+                </p>
+              )}
 
               <p
                 className="text-center text-xs"

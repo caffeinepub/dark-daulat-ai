@@ -87,19 +87,19 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing } = useInternetIdentity();
   const { data: messages = [], isLoading } = useGetMessages();
   const addMessage = useAddMessage();
   const clearMessages = useClearMessages();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on messages change
   useEffect(() => {

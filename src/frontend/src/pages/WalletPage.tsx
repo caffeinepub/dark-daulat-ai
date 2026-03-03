@@ -109,19 +109,19 @@ function TypeLabel({ type }: { type: TransactionType }) {
 
 export default function WalletPage() {
   const navigate = useNavigate();
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing } = useInternetIdentity();
   const { data: user, isLoading: userLoading } = useGetUser();
   const { data: transactions = [], isLoading: txLoading } =
     useGetTransactions();
   const withdrawMutation = useRequestWithdrawal();
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
 
   const withdrawAmountNum = Number(withdrawAmount);
   const isValidAmount =

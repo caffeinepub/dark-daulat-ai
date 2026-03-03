@@ -345,17 +345,17 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
 
 export default function DealsPage() {
   const navigate = useNavigate();
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing } = useInternetIdentity();
   const { data: dealsFromBackend = [], isLoading } = useGetActiveDeals();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
-    if (!identity) {
+    if (!isInitializing && !identity) {
       navigate({ to: "/login" });
     }
-  }, [identity, navigate]);
+  }, [identity, isInitializing, navigate]);
 
   // Use sample deals when backend has no deals yet
   const isSampleMode = !isLoading && dealsFromBackend.length === 0;
