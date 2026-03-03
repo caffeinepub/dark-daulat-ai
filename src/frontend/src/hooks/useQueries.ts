@@ -20,16 +20,32 @@ export function useGetUser() {
   const { actor, isFetching } = useActor();
   const { identity } = useInternetIdentity();
   return useQuery<User | null>({
-    queryKey: ["user"],
+    queryKey: ["user", identity?.getPrincipal().toString()],
     queryFn: async () => {
       if (!actor || !identity) return null;
+      // If anonymous principal, definitely not registered
+      if (identity.getPrincipal().isAnonymous()) return null;
       try {
-        return await actor.getUser();
-      } catch {
+        const result = await actor.getUser();
+        // Backend returns [] (empty array) for Option<User> when user not found
+        // result could be null, undefined, or empty array
+        if (result === null || result === undefined) return null;
+        if (Array.isArray(result)) {
+          return result.length > 0 ? (result[0] as User) : null;
+        }
+        return result as User;
+      } catch (err) {
+        console.error("getUser error:", err);
         return null;
       }
     },
-    enabled: !!actor && !isFetching && !!identity,
+    enabled:
+      !!actor &&
+      !isFetching &&
+      !!identity &&
+      !identity.getPrincipal().isAnonymous(),
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 

@@ -23,11 +23,12 @@ export default function LoginPage() {
   const {
     data: user,
     isLoading: userLoading,
-    isSuccess: userQueryDone,
+    isFetched: userFetched,
   } = useGetUser();
   const registerMutation = useRegister();
 
   const [showRegister, setShowRegister] = useState(false);
+  const [registerError, setRegisterError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -35,22 +36,23 @@ export default function LoginPage() {
 
   // After auth, check if registered — handle both cases: fresh login and existing session
   useEffect(() => {
-    if (!identity) return; // Not logged in yet, nothing to do
-    if (userLoading) return; // Wait for user query to settle
+    if (!identity) return; // Not logged in yet
+    if (identity.getPrincipal().isAnonymous()) return; // Anonymous, wait for real identity
+    if (userLoading) return; // Wait for user query to finish
+    if (!userFetched) return; // Query hasn't run yet
 
-    // Once query is done (isSuccess = true), decide what to show
-    if (userQueryDone) {
-      if (user) {
-        // Existing registered user — go to home
-        navigate({ to: "/" });
-      } else {
-        // user is null = not registered yet
-        setShowRegister(true);
-      }
+    // user is either a User object or null/undefined
+    if (user && typeof user === "object" && "name" in user) {
+      // Existing registered user — go to home
+      navigate({ to: "/" });
+    } else {
+      // null/undefined = not registered yet
+      setShowRegister(true);
     }
-  }, [identity, user, userLoading, userQueryDone, navigate]);
+  }, [identity, user, userLoading, userFetched, navigate]);
 
   const handleRegister = async () => {
+    setRegisterError("");
     if (!name.trim()) {
       toast.error("Naam daalna zaroori hai!");
       return;
@@ -70,26 +72,57 @@ export default function LoginPage() {
         name: name.trim(),
         email: email.trim(),
         mobile: mobile.trim(),
-        referralCode: referralCode.trim() || null,
+        referralCode: referralCode.trim() ? referralCode.trim() : null,
       });
-      toast.success("Registration ho gayi! Welcome to Dark Daulat AI 🎉");
+      toast.success("Registration ho gayi! Welcome to Dark Daulat AI!");
       navigate({ to: "/" });
-    } catch {
-      toast.error("Registration fail hui. Dobara try karo.");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      // Check if already registered
+      if (errMsg.includes("already registered")) {
+        toast.success("Aap already registered hain! Home pe ja rahe hain...");
+        navigate({ to: "/" });
+        return;
+      }
+      const displayMsg = "Registration fail hui. Dobara try karo.";
+      setRegisterError(displayMsg);
+      toast.error(displayMsg);
     }
   };
 
-  if (isInitializing) {
+  // Show loading while initializing OR while identity is confirmed but user query is running
+  const isCheckingUser =
+    !!identity && !identity.getPrincipal().isAnonymous() && userLoading;
+
+  if (isInitializing || isCheckingUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "oklch(0.06 0 0)" }}
+      >
         <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.14 0.03 85), oklch(0.20 0.05 85))",
+              border: "2px solid oklch(0.78 0.12 85 / 0.4)",
+            }}
+          >
+            <span
+              className="text-2xl font-bold"
+              style={{ color: "oklch(0.86 0.14 85)" }}
+            >
+              ₹
+            </span>
+          </div>
           <Loader2
             className="animate-spin"
-            size={32}
+            size={28}
             style={{ color: "oklch(0.78 0.12 85)" }}
           />
           <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
-            Loading...
+            {isCheckingUser ? "Account check ho raha hai..." : "Loading..."}
           </p>
         </div>
       </div>
@@ -422,6 +455,20 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {registerError && (
+                <p
+                  data-ocid="login.register_error_state"
+                  className="text-center text-xs rounded-lg px-3 py-2"
+                  style={{
+                    color: "oklch(0.70 0.20 25)",
+                    background: "oklch(0.62 0.22 25 / 0.1)",
+                    border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                  }}
+                >
+                  ⚠️ {registerError}
+                </p>
+              )}
+
               <Button
                 onClick={handleRegister}
                 disabled={registerMutation.isPending}
@@ -441,7 +488,7 @@ export default function LoginPage() {
                     Register ho raha hai...
                   </>
                 ) : (
-                  "Register Karo & Shuru Karo 🚀"
+                  "Register Karo & Shuru Karo"
                 )}
               </Button>
             </motion.div>
