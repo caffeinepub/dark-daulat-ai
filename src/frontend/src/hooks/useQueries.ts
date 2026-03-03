@@ -159,13 +159,17 @@ export function useRegister() {
   return useMutation({
     mutationFn: async ({
       name,
+      email,
+      mobile,
       referralCode,
     }: {
       name: string;
+      email: string;
+      mobile: string;
       referralCode: string | null;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.register(name, referralCode);
+      return actor.register(name, email, mobile, referralCode);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["user"] }),
   });

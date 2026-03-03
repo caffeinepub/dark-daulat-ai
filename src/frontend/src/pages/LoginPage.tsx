@@ -68,6 +68,8 @@ export default function LoginPage() {
     try {
       await registerMutation.mutateAsync({
         name: name.trim(),
+        email: email.trim(),
+        mobile: mobile.trim(),
         referralCode: referralCode.trim() || null,
       });
       toast.success("Registration ho gayi! Welcome to Dark Daulat AI 🎉");

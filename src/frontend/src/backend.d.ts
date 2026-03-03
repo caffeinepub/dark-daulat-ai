@@ -30,10 +30,12 @@ export interface User {
     name: string;
     createdAt: Time;
     pendingEarnings: bigint;
+    email: string;
     shareCount: bigint;
     referredBy?: string;
     totalEarnings: bigint;
     isAdmin: boolean;
+    mobile: string;
     withdrawnAmount: bigint;
     walletBalance: bigint;
 }
@@ -95,16 +97,16 @@ export interface Deal {
     affiliateLink: string;
     price: bigint;
 }
-export interface Message {
-    role: MessageRole;
-    message: string;
-    timestamp: Time;
-}
 export interface ProfitCalculation {
     adminCut: bigint;
     expectedEarnings: bigint;
     referralBonus: bigint;
     netProfit: bigint;
+}
+export interface Message {
+    role: MessageRole;
+    message: string;
+    timestamp: Time;
 }
 export interface TransactionStatusSummary {
     pendingCount: bigint;
@@ -112,18 +114,6 @@ export interface TransactionStatusSummary {
     lastUpdated: Time;
     totalTransactions: bigint;
     rejectedCount: bigint;
-}
-export interface UserProfile {
-    referralCode: string;
-    name: string;
-    createdAt: Time;
-    pendingEarnings: bigint;
-    shareCount: bigint;
-    referredBy?: string;
-    totalEarnings: bigint;
-    isAdmin: boolean;
-    withdrawnAmount: bigint;
-    walletBalance: bigint;
 }
 export enum MessageRole {
     user = "user",
@@ -158,32 +148,26 @@ export interface backendInterface {
     creditCommission(userId: Principal, amount: bigint, note: string): Promise<void>;
     deleteDeal(id: bigint): Promise<void>;
     getActiveDeals(): Promise<Array<Deal>>;
-    getAdminAffiliateSettings(settingsId: string): Promise<PersistentAdminAffiliateSettings | null>;
     getAdminCommissionSummary(adminName: string): Promise<AdminCommissionSummary | null>;
     getAdminStats(): Promise<AdminStats>;
-    getAffiliateAccount(callerId: Principal): Promise<PersistentPersistentAffiliateAccountDetails | null>;
+    getAffiliateAccount(accountId: Principal): Promise<PersistentPersistentAffiliateAccountDetails | null>;
     getAffiliateAccountStats(statsId: string): Promise<AffiliateAccountStats | null>;
-    getAffiliateAccountsByStatus(status: string): Promise<Array<PersistentPersistentAffiliateAccountDetails>>;
     getAllAdminAffiliateSettings(): Promise<Array<PersistentAdminAffiliateSettings>>;
     getAllAffiliateAccounts(): Promise<Array<PersistentPersistentAffiliateAccountDetails>>;
     getAllDeals(): Promise<Array<Deal>>;
     getAllTransactions(): Promise<Array<Transaction>>;
     getAllUsers(): Promise<Array<User>>;
-    getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getLeaderboard(): Promise<Array<LeaderboardEntry>>;
     getMessages(): Promise<Array<Message>>;
     getTransactionStatusSummary(summaryId: string): Promise<TransactionStatusSummary | null>;
     getTransactions(): Promise<Array<Transaction>>;
     getUser(): Promise<User | null>;
-    getUserProfile(user: Principal): Promise<UserProfile | null>;
-    isAdminQuery(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
-    register(name: string, referralCode: string | null): Promise<void>;
+    register(name: string, email: string, mobile: string, referralCode: string | null): Promise<void>;
     rejectWithdrawal(transactionId: bigint): Promise<void>;
     requestWithdrawal(amount: bigint): Promise<bigint>;
     saveAdminAffiliateSettings(settings: PersistentAdminAffiliateSettings): Promise<bigint>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAdmin(user: Principal): Promise<void>;
     trackShare(dealId: bigint): Promise<void>;
     updateAdminCommissionSummary(adminName: string, adminTotal: bigint): Promise<void>;
@@ -191,5 +175,4 @@ export interface backendInterface {
     updateDeal(id: bigint, title: string, imageUrl: string, price: bigint, affiliateLink: string, commissionPercent: bigint, trendingTag: string, targetRegion: string, description: string): Promise<void>;
     updateTransactionStatusSummary(summaryId: string, totalTransactions: bigint, pendingCount: bigint, approvedCount: bigint, rejectedCount: bigint): Promise<void>;
     updateUser(name: string): Promise<void>;
-    verifyAffiliateAccount(callerId: Principal, status: string): Promise<void>;
 }

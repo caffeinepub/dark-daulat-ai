@@ -1,16 +1,17 @@
-import Text "mo:core/Text";
-import Nat "mo:core/Nat";
-import Map "mo:core/Map";
 import Array "mo:core/Array";
-import Order "mo:core/Order";
-import Time "mo:core/Time";
-import Runtime "mo:core/Runtime";
 import List "mo:core/List";
+import Map "mo:core/Map";
+import Nat "mo:core/Nat";
+import Order "mo:core/Order";
 import Principal "mo:core/Principal";
-
+import Runtime "mo:core/Runtime";
+import Text "mo:core/Text";
+import Time "mo:core/Time";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -18,6 +19,8 @@ actor {
   // Types
   type PersistentUser = {
     name : Text;
+    email : Text;
+    mobile : Text;
     referralCode : Text;
     referredBy : ?Text;
     walletBalance : Nat;
@@ -42,19 +45,6 @@ actor {
   };
 
   let users = Map.empty<Principal, PersistentUser>();
-
-  public type UserProfile = {
-    name : Text;
-    referralCode : Text;
-    referredBy : ?Text;
-    walletBalance : Nat;
-    totalEarnings : Nat;
-    pendingEarnings : Nat;
-    withdrawnAmount : Nat;
-    shareCount : Nat;
-    isAdmin : Bool;
-    createdAt : Time.Time;
-  };
 
   public type PersistentDeal = {
     id : Nat;
@@ -122,13 +112,6 @@ actor {
     totalApprovedWithdrawals : Nat;
   };
 
-  public type AffiliateAccountDetails = {
-    upiId : ?Text;
-    bankAccountNumber : ?Text;
-    ifscCode : ?Text;
-    accountHolderName : ?Text;
-  };
-
   public type PersistentPersistentAffiliateAccountDetails = {
     upiId : ?Text;
     bankAccountNumber : ?Text;
@@ -184,7 +167,6 @@ actor {
   };
 
   let affiliateAccounts = Map.empty<Principal, PersistentPersistentAffiliateAccountDetails>();
-
   let adminSettings = Map.empty<Text, PersistentAdminAffiliateSettings>();
   let adminCommissionSummary = Map.empty<Text, AdminCommissionSummary>();
   let affiliateAccountStats = Map.empty<Text, AffiliateAccountStats>();
@@ -210,7 +192,7 @@ actor {
   let messages = Map.empty<Principal, [PersistentMessage]>();
 
   // User Functions
-  public shared ({ caller }) func register(name : Text, referralCode : ?Text) : async () {
+  public shared ({ caller }) func register(name : Text, email : Text, mobile : Text, referralCode : ?Text) : async () {
     // Allow guests to register - no authorization check needed
     if (users.containsKey(caller)) {
       Runtime.trap("User already registered");
@@ -230,6 +212,8 @@ actor {
 
     let newUser : PersistentUser = {
       name;
+      email;
+      mobile;
       referralCode = caller.toText();
       referredBy = referralCode;
       walletBalance = 0;
@@ -250,50 +234,9 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
-    };
-    switch (users.get(caller)) {
-      case (?user) { ?user };
-      case (null) { null };
-    };
-  };
-
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
-    switch (users.get(user)) {
-      case (?u) { ?u };
-      case (null) { null };
-    };
-  };
-
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-
-    switch (users.get(caller)) {
-      case (?existingUser) {
-        let updatedUser : PersistentUser = {
-          existingUser with name = profile.name;
-        };
-        users.add(caller, updatedUser);
-      };
-      case (null) { Runtime.trap("User not found") };
-    };
-  };
-
+  // getUser (no authorization check)
   public query ({ caller }) func getUser() : async ?User {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view their profile");
-    };
-    switch (users.get(caller)) {
-      case (?user) { ?user };
-      case (null) { null };
-    };
+    users.get(caller);
   };
 
   public shared ({ caller }) func updateUser(name : Text) : async () {
@@ -311,44 +254,6 @@ actor {
     };
   };
 
-  public shared ({ caller }) func adjustWalletBalance(userId : Principal, amount : Int) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can adjust wallet balance");
-    };
-
-    switch (users.get(userId)) {
-      case (?user) {
-        let newBalance = if (amount >= 0) {
-          user.walletBalance + Int.abs(amount);
-        } else {
-          if (user.walletBalance >= Int.abs(amount)) {
-            user.walletBalance - Int.abs(amount);
-          } else {
-            0;
-          };
-        };
-        let updatedUser : PersistentUser = {
-          user with walletBalance = newBalance
-        };
-        users.add(userId, updatedUser);
-
-        // Create adjustment transaction
-        let txn : PersistentTransaction = {
-          id = nextTransactionId;
-          userId;
-          amount = Int.abs(amount);
-          transactionType = #adjustment;
-          status = #approved;
-          note = "Admin adjustment";
-          timestamp = Time.now();
-        };
-        transactions.add(nextTransactionId, txn);
-        nextTransactionId += 1;
-      };
-      case (null) { Runtime.trap("User not found") };
-    };
-  };
-
   public query ({ caller }) func getAllUsers() : async [User] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view all users");
@@ -357,15 +262,15 @@ actor {
   };
 
   // Affiliate Account Functions
-  public query ({ caller }) func getAffiliateAccount(callerId : Principal) : async ?PersistentPersistentAffiliateAccountDetails {
+  public shared ({ caller }) func getAffiliateAccount(accountId : Principal) : async ?PersistentPersistentAffiliateAccountDetails {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be a user");
     };
     // Users can only view their own account, admins can view any account
-    if (caller != callerId and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (caller != accountId and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own affiliate account");
     };
-    affiliateAccounts.get(callerId);
+    affiliateAccounts.get(accountId);
   };
 
   public shared ({ caller }) func addOrUpdateAffiliateAccount(details : PersistentPersistentAffiliateAccountDetails) : async () {
@@ -434,37 +339,6 @@ actor {
       Runtime.trap("Unauthorized: Only admins can view all affiliate accounts");
     };
     affiliateAccounts.values().toArray();
-  };
-
-  public query ({ caller }) func getAffiliateAccountsByStatus(status : Text) : async [PersistentPersistentAffiliateAccountDetails] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can filter by status");
-    };
-
-    affiliateAccounts.values().toArray().filter(
-      func(details) {
-        switch (details.verificationStatus) {
-          case (?s) { s == status };
-          case (null) { false };
-        };
-      }
-    );
-  };
-
-  public shared ({ caller }) func verifyAffiliateAccount(callerId : Principal, status : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can verify accounts");
-    };
-
-    switch (affiliateAccounts.get(callerId)) {
-      case (?existing) {
-        let updated : PersistentPersistentAffiliateAccountDetails = {
-          existing with verificationStatus = ?status;
-        };
-        affiliateAccounts.add(callerId, updated);
-      };
-      case (null) { Runtime.trap("Account not found") };
-    };
   };
 
   // Deal Functions
@@ -551,15 +425,12 @@ actor {
     };
   };
 
-  public query func getAllDeals() : async [Deal] {
-    // Public access - anyone can view active deals
-    deals.values().toArray();
+  public query func getActiveDeals() : async [Deal] {
+    deals.values().toArray().filter<Deal>(func(d) { d.isActive });
   };
 
-  public query func getActiveDeals() : async [Deal] {
-    // Public access - anyone can view active deals
-    let allDeals = deals.values().toArray();
-    allDeals.filter<Deal>(func(d) { d.isActive });
+  public query func getAllDeals() : async [Deal] {
+    deals.values().toArray();
   };
 
   public shared ({ caller }) func trackShare(dealId : Nat) : async () {
@@ -606,9 +477,7 @@ actor {
     };
   };
 
-  // Profit Calculator
   public query func calculateProfit(productPrice : Nat, commissionPercent : Nat) : async ProfitCalculation {
-    // Public access - anyone can use calculator
     let expectedEarnings = (productPrice * commissionPercent) / 100;
     let referralBonus = (expectedEarnings * 5) / 100;
     let adminCut = (expectedEarnings * 15) / 100;
@@ -729,8 +598,7 @@ actor {
       Runtime.trap("Unauthorized: Only users can view their transactions");
     };
 
-    let allTxns = transactions.values().toArray();
-    allTxns.filter<Transaction>(func(t) { t.userId == caller });
+    transactions.values().toArray().filter<Transaction>(func(t) { t.userId == caller });
   };
 
   public query ({ caller }) func getAllTransactions() : async [Transaction] {
@@ -807,7 +675,6 @@ actor {
 
   // Referral Leaderboard
   public query func getLeaderboard() : async [LeaderboardEntry] {
-    // Public access - anyone can view leaderboard
     let allUsers = users.entries().toArray();
     let sorted = allUsers.sort(
       func(a, b) { Nat.compare(b.1.totalEarnings, a.1.totalEarnings) }
@@ -843,10 +710,6 @@ actor {
       };
       case (null) {};
     };
-  };
-
-  public query ({ caller }) func isAdminQuery() : async Bool {
-    AccessControl.isAdmin(accessControlState, caller);
   };
 
   public query ({ caller }) func getAdminStats() : async AdminStats {
@@ -966,13 +829,6 @@ actor {
     id;
   };
 
-  public query ({ caller }) func getAdminAffiliateSettings(settingsId : Text) : async ?PersistentAdminAffiliateSettings {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can view affiliate settings");
-    };
-    adminSettings.get(settingsId);
-  };
-
   public query ({ caller }) func getAllAdminAffiliateSettings() : async [PersistentAdminAffiliateSettings] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view all settings");
@@ -1061,5 +917,43 @@ actor {
       Runtime.trap("Unauthorized: Only admins can view transaction summary");
     };
     transactionStatusSummary.get(summaryId);
+  };
+
+  public shared ({ caller }) func adjustWalletBalance(userId : Principal, amount : Int) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can adjust wallet balance");
+    };
+
+    switch (users.get(userId)) {
+      case (?user) {
+        let newBalance = if (amount >= 0) {
+          user.walletBalance + Int.abs(amount);
+        } else {
+          if (user.walletBalance >= Int.abs(amount)) {
+            user.walletBalance - Int.abs(amount);
+          } else {
+            0;
+          };
+        };
+        let updatedUser : PersistentUser = {
+          user with walletBalance = newBalance
+        };
+        users.add(userId, updatedUser);
+
+        // Create adjustment transaction
+        let txn : PersistentTransaction = {
+          id = nextTransactionId;
+          userId;
+          amount = Int.abs(amount);
+          transactionType = #adjustment;
+          status = #approved;
+          note = "Admin adjustment";
+          timestamp = Time.now();
+        };
+        transactions.add(nextTransactionId, txn);
+        nextTransactionId += 1;
+      };
+      case (null) { Runtime.trap("User not found") };
+    };
   };
 };

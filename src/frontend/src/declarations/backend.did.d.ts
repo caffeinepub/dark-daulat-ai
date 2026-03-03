@@ -119,22 +119,12 @@ export interface User {
   'name' : string,
   'createdAt' : Time,
   'pendingEarnings' : bigint,
+  'email' : string,
   'shareCount' : bigint,
   'referredBy' : [] | [string],
   'totalEarnings' : bigint,
   'isAdmin' : boolean,
-  'withdrawnAmount' : bigint,
-  'walletBalance' : bigint,
-}
-export interface UserProfile {
-  'referralCode' : string,
-  'name' : string,
-  'createdAt' : Time,
-  'pendingEarnings' : bigint,
-  'shareCount' : bigint,
-  'referredBy' : [] | [string],
-  'totalEarnings' : bigint,
-  'isAdmin' : boolean,
+  'mobile' : string,
   'withdrawnAmount' : bigint,
   'walletBalance' : bigint,
 }
@@ -160,10 +150,6 @@ export interface _SERVICE {
   'creditCommission' : ActorMethod<[Principal, bigint, string], undefined>,
   'deleteDeal' : ActorMethod<[bigint], undefined>,
   'getActiveDeals' : ActorMethod<[], Array<Deal>>,
-  'getAdminAffiliateSettings' : ActorMethod<
-    [string],
-    [] | [PersistentAdminAffiliateSettings]
-  >,
   'getAdminCommissionSummary' : ActorMethod<
     [string],
     [] | [AdminCommissionSummary]
@@ -177,10 +163,6 @@ export interface _SERVICE {
     [string],
     [] | [AffiliateAccountStats]
   >,
-  'getAffiliateAccountsByStatus' : ActorMethod<
-    [string],
-    Array<PersistentPersistentAffiliateAccountDetails>
-  >,
   'getAllAdminAffiliateSettings' : ActorMethod<
     [],
     Array<PersistentAdminAffiliateSettings>
@@ -192,7 +174,6 @@ export interface _SERVICE {
   'getAllDeals' : ActorMethod<[], Array<Deal>>,
   'getAllTransactions' : ActorMethod<[], Array<Transaction>>,
   'getAllUsers' : ActorMethod<[], Array<User>>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getLeaderboard' : ActorMethod<[], Array<LeaderboardEntry>>,
   'getMessages' : ActorMethod<[], Array<Message>>,
@@ -202,17 +183,14 @@ export interface _SERVICE {
   >,
   'getTransactions' : ActorMethod<[], Array<Transaction>>,
   'getUser' : ActorMethod<[], [] | [User]>,
-  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'isAdminQuery' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'register' : ActorMethod<[string, [] | [string]], undefined>,
+  'register' : ActorMethod<[string, string, string, [] | [string]], undefined>,
   'rejectWithdrawal' : ActorMethod<[bigint], undefined>,
   'requestWithdrawal' : ActorMethod<[bigint], bigint>,
   'saveAdminAffiliateSettings' : ActorMethod<
     [PersistentAdminAffiliateSettings],
     bigint
   >,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setAdmin' : ActorMethod<[Principal], undefined>,
   'trackShare' : ActorMethod<[bigint], undefined>,
   'updateAdminCommissionSummary' : ActorMethod<[string, bigint], undefined>,
@@ -229,7 +207,6 @@ export interface _SERVICE {
     undefined
   >,
   'updateUser' : ActorMethod<[string], undefined>,
-  'verifyAffiliateAccount' : ActorMethod<[Principal, string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

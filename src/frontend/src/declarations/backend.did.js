@@ -46,21 +46,6 @@ export const Deal = IDL.Record({
   'affiliateLink' : IDL.Text,
   'price' : IDL.Nat,
 });
-export const PersistentAdminAffiliateSettings = IDL.Record({
-  'id' : IDL.Nat,
-  'username' : IDL.Opt(IDL.Text),
-  'websiteUrl' : IDL.Text,
-  'createdAt' : Time,
-  'createdBy' : IDL.Opt(IDL.Principal),
-  'lastUpdated' : IDL.Opt(Time),
-  'lastUpdatedBy' : IDL.Opt(IDL.Principal),
-  'apiKey' : IDL.Opt(IDL.Text),
-  'notes' : IDL.Text,
-  'affiliateId' : IDL.Text,
-  'contactEmail' : IDL.Opt(IDL.Text),
-  'supportPhone' : IDL.Opt(IDL.Text),
-  'platformName' : IDL.Text,
-});
 export const AdminCommissionSummary = IDL.Record({
   'adminTotal' : IDL.Nat,
   'lastUpdated' : Time,
@@ -80,6 +65,21 @@ export const AffiliateAccountStats = IDL.Record({
   'verifiedAccounts' : IDL.Nat,
   'activeAccounts' : IDL.Nat,
   'totalAccounts' : IDL.Nat,
+});
+export const PersistentAdminAffiliateSettings = IDL.Record({
+  'id' : IDL.Nat,
+  'username' : IDL.Opt(IDL.Text),
+  'websiteUrl' : IDL.Text,
+  'createdAt' : Time,
+  'createdBy' : IDL.Opt(IDL.Principal),
+  'lastUpdated' : IDL.Opt(Time),
+  'lastUpdatedBy' : IDL.Opt(IDL.Principal),
+  'apiKey' : IDL.Opt(IDL.Text),
+  'notes' : IDL.Text,
+  'affiliateId' : IDL.Text,
+  'contactEmail' : IDL.Opt(IDL.Text),
+  'supportPhone' : IDL.Opt(IDL.Text),
+  'platformName' : IDL.Text,
 });
 export const TransactionStatus = IDL.Variant({
   'pending' : IDL.Null,
@@ -107,22 +107,12 @@ export const User = IDL.Record({
   'name' : IDL.Text,
   'createdAt' : Time,
   'pendingEarnings' : IDL.Nat,
+  'email' : IDL.Text,
   'shareCount' : IDL.Nat,
   'referredBy' : IDL.Opt(IDL.Text),
   'totalEarnings' : IDL.Nat,
   'isAdmin' : IDL.Bool,
-  'withdrawnAmount' : IDL.Nat,
-  'walletBalance' : IDL.Nat,
-});
-export const UserProfile = IDL.Record({
-  'referralCode' : IDL.Text,
-  'name' : IDL.Text,
-  'createdAt' : Time,
-  'pendingEarnings' : IDL.Nat,
-  'shareCount' : IDL.Nat,
-  'referredBy' : IDL.Opt(IDL.Text),
-  'totalEarnings' : IDL.Nat,
-  'isAdmin' : IDL.Bool,
+  'mobile' : IDL.Text,
   'withdrawnAmount' : IDL.Nat,
   'walletBalance' : IDL.Nat,
 });
@@ -182,11 +172,6 @@ export const idlService = IDL.Service({
   'creditCommission' : IDL.Func([IDL.Principal, IDL.Nat, IDL.Text], [], []),
   'deleteDeal' : IDL.Func([IDL.Nat], [], []),
   'getActiveDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
-  'getAdminAffiliateSettings' : IDL.Func(
-      [IDL.Text],
-      [IDL.Opt(PersistentAdminAffiliateSettings)],
-      ['query'],
-    ),
   'getAdminCommissionSummary' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(AdminCommissionSummary)],
@@ -196,16 +181,11 @@ export const idlService = IDL.Service({
   'getAffiliateAccount' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(PersistentPersistentAffiliateAccountDetails)],
-      ['query'],
+      [],
     ),
   'getAffiliateAccountStats' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(AffiliateAccountStats)],
-      ['query'],
-    ),
-  'getAffiliateAccountsByStatus' : IDL.Func(
-      [IDL.Text],
-      [IDL.Vec(PersistentPersistentAffiliateAccountDetails)],
       ['query'],
     ),
   'getAllAdminAffiliateSettings' : IDL.Func(
@@ -221,7 +201,6 @@ export const idlService = IDL.Service({
   'getAllDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
   'getAllTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
   'getAllUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getLeaderboard' : IDL.Func([], [IDL.Vec(LeaderboardEntry)], ['query']),
   'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
@@ -232,14 +211,12 @@ export const idlService = IDL.Service({
     ),
   'getTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
   'getUser' : IDL.Func([], [IDL.Opt(User)], ['query']),
-  'getUserProfile' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Opt(UserProfile)],
-      ['query'],
-    ),
-  'isAdminQuery' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'register' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [], []),
+  'register' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+      [],
+      [],
+    ),
   'rejectWithdrawal' : IDL.Func([IDL.Nat], [], []),
   'requestWithdrawal' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'saveAdminAffiliateSettings' : IDL.Func(
@@ -247,7 +224,6 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setAdmin' : IDL.Func([IDL.Principal], [], []),
   'trackShare' : IDL.Func([IDL.Nat], [], []),
   'updateAdminCommissionSummary' : IDL.Func([IDL.Text, IDL.Nat], [], []),
@@ -277,7 +253,6 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateUser' : IDL.Func([IDL.Text], [], []),
-  'verifyAffiliateAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
 });
 
 export const idlInitArgs = [];
@@ -321,21 +296,6 @@ export const idlFactory = ({ IDL }) => {
     'affiliateLink' : IDL.Text,
     'price' : IDL.Nat,
   });
-  const PersistentAdminAffiliateSettings = IDL.Record({
-    'id' : IDL.Nat,
-    'username' : IDL.Opt(IDL.Text),
-    'websiteUrl' : IDL.Text,
-    'createdAt' : Time,
-    'createdBy' : IDL.Opt(IDL.Principal),
-    'lastUpdated' : IDL.Opt(Time),
-    'lastUpdatedBy' : IDL.Opt(IDL.Principal),
-    'apiKey' : IDL.Opt(IDL.Text),
-    'notes' : IDL.Text,
-    'affiliateId' : IDL.Text,
-    'contactEmail' : IDL.Opt(IDL.Text),
-    'supportPhone' : IDL.Opt(IDL.Text),
-    'platformName' : IDL.Text,
-  });
   const AdminCommissionSummary = IDL.Record({
     'adminTotal' : IDL.Nat,
     'lastUpdated' : Time,
@@ -355,6 +315,21 @@ export const idlFactory = ({ IDL }) => {
     'verifiedAccounts' : IDL.Nat,
     'activeAccounts' : IDL.Nat,
     'totalAccounts' : IDL.Nat,
+  });
+  const PersistentAdminAffiliateSettings = IDL.Record({
+    'id' : IDL.Nat,
+    'username' : IDL.Opt(IDL.Text),
+    'websiteUrl' : IDL.Text,
+    'createdAt' : Time,
+    'createdBy' : IDL.Opt(IDL.Principal),
+    'lastUpdated' : IDL.Opt(Time),
+    'lastUpdatedBy' : IDL.Opt(IDL.Principal),
+    'apiKey' : IDL.Opt(IDL.Text),
+    'notes' : IDL.Text,
+    'affiliateId' : IDL.Text,
+    'contactEmail' : IDL.Opt(IDL.Text),
+    'supportPhone' : IDL.Opt(IDL.Text),
+    'platformName' : IDL.Text,
   });
   const TransactionStatus = IDL.Variant({
     'pending' : IDL.Null,
@@ -382,22 +357,12 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'createdAt' : Time,
     'pendingEarnings' : IDL.Nat,
+    'email' : IDL.Text,
     'shareCount' : IDL.Nat,
     'referredBy' : IDL.Opt(IDL.Text),
     'totalEarnings' : IDL.Nat,
     'isAdmin' : IDL.Bool,
-    'withdrawnAmount' : IDL.Nat,
-    'walletBalance' : IDL.Nat,
-  });
-  const UserProfile = IDL.Record({
-    'referralCode' : IDL.Text,
-    'name' : IDL.Text,
-    'createdAt' : Time,
-    'pendingEarnings' : IDL.Nat,
-    'shareCount' : IDL.Nat,
-    'referredBy' : IDL.Opt(IDL.Text),
-    'totalEarnings' : IDL.Nat,
-    'isAdmin' : IDL.Bool,
+    'mobile' : IDL.Text,
     'withdrawnAmount' : IDL.Nat,
     'walletBalance' : IDL.Nat,
   });
@@ -457,11 +422,6 @@ export const idlFactory = ({ IDL }) => {
     'creditCommission' : IDL.Func([IDL.Principal, IDL.Nat, IDL.Text], [], []),
     'deleteDeal' : IDL.Func([IDL.Nat], [], []),
     'getActiveDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
-    'getAdminAffiliateSettings' : IDL.Func(
-        [IDL.Text],
-        [IDL.Opt(PersistentAdminAffiliateSettings)],
-        ['query'],
-      ),
     'getAdminCommissionSummary' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(AdminCommissionSummary)],
@@ -471,16 +431,11 @@ export const idlFactory = ({ IDL }) => {
     'getAffiliateAccount' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(PersistentPersistentAffiliateAccountDetails)],
-        ['query'],
+        [],
       ),
     'getAffiliateAccountStats' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(AffiliateAccountStats)],
-        ['query'],
-      ),
-    'getAffiliateAccountsByStatus' : IDL.Func(
-        [IDL.Text],
-        [IDL.Vec(PersistentPersistentAffiliateAccountDetails)],
         ['query'],
       ),
     'getAllAdminAffiliateSettings' : IDL.Func(
@@ -496,7 +451,6 @@ export const idlFactory = ({ IDL }) => {
     'getAllDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
     'getAllTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
     'getAllUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getLeaderboard' : IDL.Func([], [IDL.Vec(LeaderboardEntry)], ['query']),
     'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
@@ -507,14 +461,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
     'getUser' : IDL.Func([], [IDL.Opt(User)], ['query']),
-    'getUserProfile' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Opt(UserProfile)],
-        ['query'],
-      ),
-    'isAdminQuery' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'register' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [], []),
+    'register' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+        [],
+        [],
+      ),
     'rejectWithdrawal' : IDL.Func([IDL.Nat], [], []),
     'requestWithdrawal' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'saveAdminAffiliateSettings' : IDL.Func(
@@ -522,7 +474,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
-    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setAdmin' : IDL.Func([IDL.Principal], [], []),
     'trackShare' : IDL.Func([IDL.Nat], [], []),
     'updateAdminCommissionSummary' : IDL.Func([IDL.Text, IDL.Nat], [], []),
@@ -561,7 +512,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateUser' : IDL.Func([IDL.Text], [], []),
-    'verifyAffiliateAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   });
 };
 
