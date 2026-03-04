@@ -9,9 +9,9 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -228,9 +228,10 @@ actor {
 
     // Assign admin role to first user
     if (isFirstUser) {
-      AccessControl.assignRole(accessControlState, caller, caller, #admin);
+      accessControlState.userRoles.add(caller, #admin);
+      accessControlState.adminAssigned := true;
     } else {
-      AccessControl.assignRole(accessControlState, caller, caller, #user);
+      accessControlState.userRoles.add(caller, #user);
     };
   };
 

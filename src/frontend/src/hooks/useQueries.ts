@@ -212,12 +212,12 @@ export function useRegister() {
       // Pass null directly — the ICP SDK handles optional Text encoding automatically
       // ICP Candid: optional Text must be [] for None, [value] for Some
       // Passing JS null directly causes "Failed to parse Candid" errors
-      const refCodeCandid: [string] | [] = referralCode?.trim()
-        ? [referralCode.trim()]
-        : [];
+      // Pass referralCode directly as string | null — the ICP SDK encodes ?Text correctly
+      const refCode: string | null = referralCode?.trim()
+        ? referralCode.trim()
+        : null;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await actor.register(name, email, mobile, refCodeCandid as any);
+        await actor.register(name, email, mobile, refCode);
       } catch (err) {
         console.error("[useRegister] Backend error:", err);
         // Extract meaningful error from Candid reject

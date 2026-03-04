@@ -48,7 +48,7 @@ function getPlatform(deal: Deal): { name: string; color: string; bg: string } {
       color: "oklch(0.95 0.02 145)",
       bg: "oklch(0.45 0.22 145)",
     };
-  // Default: Amazon
+  // Default: Amazon (amazon.in or amzn.to)
   return {
     name: "Amazon",
     color: "oklch(0.10 0 0)",
@@ -65,7 +65,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
     price: BigInt(1299),
-    affiliateLink: "https://amzn.to/boatairdopes",
+    affiliateLink: "https://www.amazon.in/s?k=boAt+Airdopes+141+TWS",
     commissionPercent: BigInt(8),
     trendingTag: "🔥 Hot",
     targetRegion: "Pan India",
@@ -80,7 +80,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&h=400&fit=crop",
     price: BigInt(19990),
-    affiliateLink: "https://amzn.to/sonywh",
+    affiliateLink: "https://www.amazon.in/s?k=Sony+WH-1000XM4",
     commissionPercent: BigInt(6),
     trendingTag: "⭐ Premium",
     targetRegion: "Metro Cities",
@@ -95,7 +95,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
     price: BigInt(2499),
-    affiliateLink: "https://amzn.to/noisewatch",
+    affiliateLink:
+      "https://www.amazon.in/s?k=Noise+ColorFit+Ultra+3+Smartwatch",
     commissionPercent: BigInt(12),
     trendingTag: "⌚ Trending",
     targetRegion: "Pan India",
@@ -110,7 +111,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
     price: BigInt(10999),
-    affiliateLink: "https://amzn.to/redmi13c",
+    affiliateLink: "https://www.amazon.in/s?k=Redmi+13C+5G",
     commissionPercent: BigInt(5),
     trendingTag: "📱 5G",
     targetRegion: "Pan India",
@@ -125,7 +126,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&h=400&fit=crop",
     price: BigInt(14999),
-    affiliateLink: "https://amzn.to/samsungf15",
+    affiliateLink: "https://www.amazon.in/s?k=Samsung+Galaxy+F15+5G",
     commissionPercent: BigInt(5),
     trendingTag: "📱 Samsung",
     targetRegion: "Pan India",
@@ -140,7 +141,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=400&h=400&fit=crop",
     price: BigInt(19999),
-    affiliateLink: "https://amzn.to/pocox6",
+    affiliateLink: "https://www.amazon.in/s?k=Poco+X6+5G",
     commissionPercent: BigInt(5),
     trendingTag: "🔥 Best Value",
     targetRegion: "Pan India",
@@ -155,7 +156,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
     price: BigInt(2495),
-    affiliateLink: "https://amzn.to/philipsmixer",
+    affiliateLink: "https://www.amazon.in/s?k=Philips+HL7756+Mixer+Grinder",
     commissionPercent: BigInt(10),
     trendingTag: "🍳 Kitchen",
     targetRegion: "Tier 2 Cities",
@@ -170,7 +171,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop",
     price: BigInt(799),
-    affiliateLink: "https://amzn.to/butterflykettle",
+    affiliateLink: "https://www.amazon.in/s?k=Butterfly+Electric+Kettle+1.5L",
     commissionPercent: BigInt(18),
     trendingTag: "⚡ 22% Margin",
     targetRegion: "Muzaffarpur, Bihar",
@@ -185,7 +186,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
     price: BigInt(499),
-    affiliateLink: "https://amzn.to/boldfitbands",
+    affiliateLink: "https://www.amazon.in/s?k=Boldfit+Resistance+Bands",
     commissionPercent: BigInt(22),
     trendingTag: "💪 Fitness",
     targetRegion: "Pan India",
@@ -200,7 +201,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop",
     price: BigInt(299),
-    affiliateLink: "https://amzn.to/richdadpoordad",
+    affiliateLink:
+      "https://www.amazon.in/s?k=Rich+Dad+Poor+Dad+Robert+Kiyosaki",
     commissionPercent: BigInt(10),
     trendingTag: "📚 Bestseller",
     targetRegion: "Students, Professionals",
@@ -215,7 +217,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&h=400&fit=crop",
     price: BigInt(1299),
-    affiliateLink: "https://amzn.to/ambranepowerbank",
+    affiliateLink: "https://www.amazon.in/s?k=Ambrane+20000mAh+Power+Bank",
     commissionPercent: BigInt(14),
     trendingTag: "⚡ Must Have",
     targetRegion: "Travellers",
@@ -230,7 +232,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=400&fit=crop",
     price: BigInt(699),
-    affiliateLink: "https://amzn.to/redgearmouse",
+    affiliateLink: "https://www.amazon.in/s?k=Redgear+A-15+Gaming+Mouse",
     commissionPercent: BigInt(18),
     trendingTag: "🎮 Gaming",
     targetRegion: "Gamers",
@@ -245,7 +247,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
     price: BigInt(249),
-    affiliateLink: "https://amzn.to/mamaearthfacewash",
+    affiliateLink: "https://www.amazon.in/s?k=Mamaearth+Ubtan+Face+Wash",
     commissionPercent: BigInt(18),
     trendingTag: "🌿 Natural",
     targetRegion: "Pan India",
@@ -260,7 +262,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
     price: BigInt(1799),
-    affiliateLink: "https://amzn.to/wildcraftbag",
+    affiliateLink: "https://www.amazon.in/s?k=Wildcraft+Laptop+Backpack",
     commissionPercent: BigInt(16),
     trendingTag: "🎒 College",
     targetRegion: "Students",
@@ -275,7 +277,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400&h=400&fit=crop",
     price: BigInt(799),
-    affiliateLink: "https://amzn.to/wipledo",
+    affiliateLink: "https://www.amazon.in/s?k=Wipro+9W+LED+Smart+Bulb",
     commissionPercent: BigInt(20),
     trendingTag: "💡 Smart Home",
     targetRegion: "Urban Homes",
@@ -290,7 +292,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=400&fit=crop",
     price: BigInt(1499),
-    affiliateLink: "https://amzn.to/neuherbs",
+    affiliateLink: "https://www.amazon.in/s?k=Neuherbs+True+Whey+Protein",
     commissionPercent: BigInt(18),
     trendingTag: "💪 Protein",
     targetRegion: "Gym Users",
@@ -305,7 +307,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&h=400&fit=crop",
     price: BigInt(3999),
-    affiliateLink: "https://amzn.to/americantourister",
+    affiliateLink: "https://www.amazon.in/s?k=American+Tourister+Trolley+Bag",
     commissionPercent: BigInt(12),
     trendingTag: "✈️ Travel",
     targetRegion: "Frequent Flyers",
@@ -320,7 +322,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop",
     price: BigInt(1299),
-    affiliateLink: "https://amzn.to/cosmicbyte",
+    affiliateLink: "https://www.amazon.in/s?k=Cosmic+Byte+GS430+Gaming+Headset",
     commissionPercent: BigInt(16),
     trendingTag: "🎮 Gaming",
     targetRegion: "PC, Console Gamers",
@@ -335,7 +337,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1648146894073-0c9b0d52a3b4?w=400&h=400&fit=crop",
     price: BigInt(3499),
-    affiliateLink: "https://amzn.to/pigeonairfryer",
+    affiliateLink: "https://www.amazon.in/s?k=Pigeon+Healthifry+Air+Fryer",
     commissionPercent: BigInt(14),
     trendingTag: "🥗 Healthy",
     targetRegion: "Metro Cities",
@@ -350,7 +352,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop",
     price: BigInt(34990),
-    affiliateLink: "https://amzn.to/gopro11",
+    affiliateLink: "https://www.amazon.in/s?k=GoPro+HERO11+Black",
     commissionPercent: BigInt(5),
     trendingTag: "📸 Adventure",
     targetRegion: "Travellers, Vloggers",
@@ -367,7 +369,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
     price: BigInt(18999),
-    affiliateLink: "https://fkrt.it/realme-narzo70",
+    affiliateLink: "https://www.flipkart.com/search?q=Realme+Narzo+70+Pro+5G",
     commissionPercent: BigInt(6),
     trendingTag: "📱 Flipkart Exclusive",
     targetRegion: "Pan India",
@@ -382,7 +384,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&h=400&fit=crop",
     price: BigInt(17499),
-    affiliateLink: "https://fkrt.it/oneplus-nord-ce4",
+    affiliateLink:
+      "https://www.flipkart.com/search?q=OnePlus+Nord+CE+4+Lite+5G",
     commissionPercent: BigInt(5),
     trendingTag: "📱 Flipkart 5G",
     targetRegion: "Pan India",
@@ -397,7 +400,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
     price: BigInt(899),
-    affiliateLink: "https://fkrt.it/boat-rockerz450",
+    affiliateLink: "https://www.flipkart.com/search?q=Boat+Rockerz+450",
     commissionPercent: BigInt(10),
     trendingTag: "🎧 Flipkart Deal",
     targetRegion: "Youth",
@@ -412,7 +415,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=400&h=400&fit=crop",
     price: BigInt(16999),
-    affiliateLink: "https://fkrt.it/redmi-note13",
+    affiliateLink: "https://www.flipkart.com/search?q=Redmi+Note+13+5G",
     commissionPercent: BigInt(5),
     trendingTag: "📱 Flipkart Sale",
     targetRegion: "Pan India",
@@ -427,7 +430,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
     price: BigInt(799),
-    affiliateLink: "https://fkrt.it/allensolly-shirt",
+    affiliateLink: "https://www.flipkart.com/search?q=Allen+Solly+Formal+Shirt",
     commissionPercent: BigInt(18),
     trendingTag: "👔 Flipkart Fashion",
     targetRegion: "Working Professionals",
@@ -442,7 +445,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
     price: BigInt(1295),
-    affiliateLink: "https://fkrt.it/fastrack-watch",
+    affiliateLink: "https://www.flipkart.com/search?q=Fastrack+Analog+Watch",
     commissionPercent: BigInt(15),
     trendingTag: "⌚ Flipkart Watch",
     targetRegion: "Youth",
@@ -457,7 +460,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop",
     price: BigInt(699),
-    affiliateLink: "https://fkrt.it/pigeon-kettle",
+    affiliateLink: "https://www.flipkart.com/search?q=Pigeon+Electric+Kettle",
     commissionPercent: BigInt(16),
     trendingTag: "🍳 Flipkart Kitchen",
     targetRegion: "Pan India",
@@ -472,7 +475,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
     price: BigInt(3999),
-    affiliateLink: "https://fkrt.it/noise-colorfit-pro4",
+    affiliateLink: "https://www.flipkart.com/search?q=Noise+ColorFit+Pro+4+GPS",
     commissionPercent: BigInt(8),
     trendingTag: "⌚ Flipkart GPS",
     targetRegion: "Pan India",
@@ -487,7 +490,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1593359677879-a4bb92f829e1?w=400&h=400&fit=crop",
     price: BigInt(32999),
-    affiliateLink: "https://fkrt.it/mi-43inch-4k",
+    affiliateLink: "https://www.flipkart.com/search?q=Mi+43+inch+4K+Smart+TV",
     commissionPercent: BigInt(4),
     trendingTag: "📺 Flipkart TV",
     targetRegion: "Families",
@@ -502,7 +505,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
     price: BigInt(2499),
-    affiliateLink: "https://fkrt.it/puma-running",
+    affiliateLink: "https://www.flipkart.com/search?q=Puma+Running+Shoes",
     commissionPercent: BigInt(20),
     trendingTag: "👟 Flipkart Sports",
     targetRegion: "Pan India",
@@ -519,7 +522,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
     price: BigInt(299),
-    affiliateLink: "https://s.click.aliexpress.com/led-strip",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=LED+Strip+Lights+5M+RGB",
     commissionPercent: BigInt(25),
     trendingTag: "💡 Alibaba Wholesale",
     targetRegion: "Pan India",
@@ -534,7 +538,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
     price: BigInt(199),
-    affiliateLink: "https://s.click.aliexpress.com/mini-fan",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Portable+Mini+USB+Fan",
     commissionPercent: BigInt(30),
     trendingTag: "🌬️ AliExpress Best",
     targetRegion: "Office Workers",
@@ -549,7 +554,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=400&h=400&fit=crop",
     price: BigInt(149),
-    affiliateLink: "https://s.click.aliexpress.com/screen-protector",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Tempered+Glass+Screen+Protector+Pack",
     commissionPercent: BigInt(35),
     trendingTag: "📱 AliExpress Bulk",
     targetRegion: "Resellers",
@@ -564,7 +570,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
     price: BigInt(799),
-    affiliateLink: "https://s.click.aliexpress.com/dt7-ultra",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=DT7+Ultra+Smart+Watch",
     commissionPercent: BigInt(22),
     trendingTag: "⌚ AliExpress Smart",
     targetRegion: "Pan India",
@@ -579,7 +586,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
     price: BigInt(349),
-    affiliateLink: "https://s.click.aliexpress.com/i12-tws",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=i12+TWS+Wireless+Earbuds",
     commissionPercent: BigInt(28),
     trendingTag: "🎧 AliExpress Value",
     targetRegion: "Pan India",
@@ -594,7 +602,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop",
     price: BigInt(499),
-    affiliateLink: "https://s.click.aliexpress.com/sonic-toothbrush",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Sonic+Electric+Toothbrush+Waterproof",
     commissionPercent: BigInt(25),
     trendingTag: "🦷 AliExpress Health",
     targetRegion: "Pan India",
@@ -610,7 +619,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop",
     price: BigInt(299),
-    affiliateLink: "https://s.click.aliexpress.com/magnetic-holder",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Magnetic+Car+Phone+Holder",
     commissionPercent: BigInt(30),
     trendingTag: "🚗 AliExpress Car",
     targetRegion: "Car Owners",
@@ -625,7 +635,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
     price: BigInt(399),
-    affiliateLink: "https://s.click.aliexpress.com/solar-lights",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Solar+Garden+Lights+Pack",
     commissionPercent: BigInt(22),
     trendingTag: "☀️ AliExpress Green",
     targetRegion: "Garden Lovers",
@@ -640,7 +651,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&h=400&fit=crop",
     price: BigInt(249),
-    affiliateLink: "https://s.click.aliexpress.com/vacuum-bottle",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Stainless+Steel+Vacuum+Bottle+1L",
     commissionPercent: BigInt(30),
     trendingTag: "🥤 AliExpress Eco",
     targetRegion: "Pan India",
@@ -655,7 +667,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=400&h=400&fit=crop",
     price: BigInt(1999),
-    affiliateLink: "https://s.click.aliexpress.com/phone-case-bulk",
+    affiliateLink:
+      "https://www.aliexpress.com/wholesale?SearchText=Phone+Case+Bulk+Wholesale",
     commissionPercent: BigInt(20),
     trendingTag: "📦 Alibaba Resell",
     targetRegion: "Resellers, Shops",
@@ -673,7 +686,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=400&fit=crop",
     price: BigInt(999),
-    affiliateLink: "https://www.fiverr.com/gigs/logo-design",
+    affiliateLink: "https://www.fiverr.com/search/gigs?query=logo+design+india",
     commissionPercent: BigInt(15),
     trendingTag: "🎨 Fiverr Gig",
     targetRegion: "Business Owners",
@@ -689,7 +702,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=400&fit=crop",
     price: BigInt(4999),
-    affiliateLink: "https://www.fiverr.com/gigs/wordpress-website",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=wordpress+website+development",
     commissionPercent: BigInt(12),
     trendingTag: "💻 Fiverr Dev",
     targetRegion: "Businesses",
@@ -705,7 +719,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&h=400&fit=crop",
     price: BigInt(1499),
-    affiliateLink: "https://www.fiverr.com/gigs/social-media-posts",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=social+media+marketing+posts",
     commissionPercent: BigInt(14),
     trendingTag: "📱 Fiverr Social",
     targetRegion: "Brands, Startups",
@@ -721,7 +736,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=400&h=400&fit=crop",
     price: BigInt(2999),
-    affiliateLink: "https://www.fiverr.com/gigs/seo-optimization",
+    affiliateLink: "https://www.fiverr.com/search/gigs?query=seo+optimization",
     commissionPercent: BigInt(12),
     trendingTag: "🔍 Fiverr SEO",
     targetRegion: "Website Owners",
@@ -736,7 +751,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1536240478700-b869ad10e2d1?w=400&h=400&fit=crop",
     price: BigInt(1299),
-    affiliateLink: "https://www.fiverr.com/gigs/youtube-editing",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=youtube+video+editing",
     commissionPercent: BigInt(15),
     trendingTag: "🎬 Fiverr Video",
     targetRegion: "YouTubers",
@@ -752,7 +768,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&h=400&fit=crop",
     price: BigInt(349),
-    affiliateLink: "https://www.fiverr.com/gigs/hindi-writing",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=hindi+article+writing",
     commissionPercent: BigInt(20),
     trendingTag: "✍️ Fiverr Hindi",
     targetRegion: "Hindi Bloggers",
@@ -768,7 +785,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1578926288207-a90a5366e9bf?w=400&h=400&fit=crop",
     price: BigInt(599),
-    affiliateLink: "https://www.fiverr.com/gigs/business-card",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=business+card+design",
     commissionPercent: BigInt(18),
     trendingTag: "🎨 Fiverr Design",
     targetRegion: "Business Owners",
@@ -783,7 +801,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=400&h=400&fit=crop",
     price: BigInt(799),
-    affiliateLink: "https://www.fiverr.com/gigs/hindi-voiceover",
+    affiliateLink: "https://www.fiverr.com/search/gigs?query=hindi+voice+over",
     commissionPercent: BigInt(16),
     trendingTag: "🎙️ Fiverr Voice",
     targetRegion: "Advertisers",
@@ -799,7 +817,8 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop",
     price: BigInt(499),
-    affiliateLink: "https://www.fiverr.com/gigs/data-entry",
+    affiliateLink:
+      "https://www.fiverr.com/search/gigs?query=data+entry+services",
     commissionPercent: BigInt(18),
     trendingTag: "📊 Fiverr Data",
     targetRegion: "Businesses",
@@ -814,7 +833,7 @@ const SAMPLE_DEALS: Deal[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=400&fit=crop",
     price: BigInt(1999),
-    affiliateLink: "https://www.fiverr.com/gigs/virtual-assistant",
+    affiliateLink: "https://www.fiverr.com/search/gigs?query=virtual+assistant",
     commissionPercent: BigInt(12),
     trendingTag: "💼 Fiverr VA",
     targetRegion: "Entrepreneurs",
@@ -844,9 +863,16 @@ type Filter = (typeof FILTERS)[number];
 
 const FILTER_KEYWORDS: Record<Filter, string[]> = {
   All: [],
-  Amazon: ["amzn.to"],
-  Flipkart: ["fkrt.it", "flipkart"],
-  AliExpress: ["aliexpress", "s.click.ali", "alibaba", "wholesale", "bulk"],
+  Amazon: ["amazon.in", "amzn.to"],
+  Flipkart: ["flipkart.com", "fkrt.it", "flipkart"],
+  AliExpress: [
+    "aliexpress.com",
+    "aliexpress",
+    "s.click.ali",
+    "alibaba",
+    "wholesale",
+    "bulk",
+  ],
   Fiverr: [
     "fiverr.com",
     "gig",

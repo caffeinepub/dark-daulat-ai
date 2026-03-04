@@ -24,14 +24,13 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type { Deal, Transaction, User } from "../backend.d";
 import {
   TransactionStatus as TxStatus,
   TransactionType as TxType,
 } from "../backend.d";
-import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAddDeal,
@@ -1688,34 +1687,11 @@ function AffiliateTab() {
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { identity } = useInternetIdentity();
-  const { actor } = useActor();
   const { data: user, isLoading: userLoading } = useGetUser();
 
-  // Direct backend check for admin status — fallback to isCallerAdmin()
-  const [callerIsAdmin, setCallerIsAdmin] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (actor && identity && !identity.getPrincipal().isAnonymous()) {
-      actor
-        .isCallerAdmin()
-        .then((result) => {
-          console.log("[AdminPage] isCallerAdmin result:", result);
-          setCallerIsAdmin(result);
-        })
-        .catch((err) => {
-          console.error("[AdminPage] isCallerAdmin error:", err);
-          setCallerIsAdmin(false);
-        });
-    } else if (identity?.getPrincipal().isAnonymous()) {
-      setCallerIsAdmin(false);
-    }
-  }, [actor, identity]);
-
-  // Admin is valid if EITHER user.isAdmin is true OR isCallerAdmin() returned true
-  const isAdminUser = user?.isAdmin === true || callerIsAdmin === true;
-
-  // Still loading if: user query running OR callerIsAdmin not yet checked
-  const adminLoading = userLoading || callerIsAdmin === null;
+  // Rely solely on user.isAdmin — isCallerAdmin() can fail for unregistered users
+  const isAdminUser = user?.isAdmin === true;
+  const adminLoading = userLoading;
 
   if (!identity) {
     return (
@@ -1773,6 +1749,8 @@ export default function AdminPage() {
   }
 
   if (!isAdminUser) {
+    // If user is null — not yet registered
+    const isNotRegistered = user === null || user === undefined;
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"
@@ -1789,20 +1767,27 @@ export default function AdminPage() {
           }}
         />
         <ShieldCheck size={40} style={{ color: "oklch(0.62 0.22 25)" }} />
-        <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {isNotRegistered ? "Registration Zaroori Hai" : "Access Denied"}
+        </h2>
         <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
-          Aapko admin access nahi hai
+          {isNotRegistered
+            ? "Pehle registration complete karo — phir admin panel access milega"
+            : "Aapko admin access nahi hai"}
         </p>
         <a
-          href="/"
+          href={isNotRegistered ? "/login" : "/"}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
           style={{
-            background: "oklch(0.14 0 0)",
-            border: "1px solid oklch(0.22 0.01 85)",
-            color: "oklch(0.62 0.01 85)",
+            background: isNotRegistered
+              ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
+              : "oklch(0.14 0 0)",
+            border: isNotRegistered ? "none" : "1px solid oklch(0.22 0.01 85)",
+            color: isNotRegistered ? "oklch(0.08 0 0)" : "oklch(0.62 0.01 85)",
           }}
         >
-          <ArrowLeft size={14} /> Home pe jao
+          <ArrowLeft size={14} />
+          {isNotRegistered ? "Register / Login Karo" : "Home pe jao"}
         </a>
       </div>
     );
