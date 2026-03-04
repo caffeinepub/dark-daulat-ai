@@ -23,12 +23,9 @@ export function useGetUser() {
     queryKey: ["user", identity?.getPrincipal().toString()],
     queryFn: async () => {
       if (!actor || !identity) return null;
-      // If anonymous principal, definitely not registered
       if (identity.getPrincipal().isAnonymous()) return null;
       try {
         const result = await actor.getUser();
-        // Backend returns [] (empty array) for Option<User> when user not found
-        // result could be null, undefined, or empty array
         if (result === null || result === undefined) return null;
         if (Array.isArray(result)) {
           return result.length > 0 ? (result[0] as User) : null;
@@ -44,8 +41,9 @@ export function useGetUser() {
       !isFetching &&
       !!identity &&
       !identity.getPrincipal().isAnonymous(),
-    retry: 2,
-    retryDelay: 1000,
+    retry: 3,
+    retryDelay: (attempt) => attempt * 1500,
+    staleTime: 0,
   });
 }
 
@@ -184,10 +182,36 @@ export function useRegister() {
       mobile: string;
       referralCode: string | null;
     }) => {
-      if (!actor) throw new Error("Actor not ready");
-      return actor.register(name, email, mobile, referralCode);
+      if (!actor) throw new Error("Actor not ready. Dobara try karein.");
+      // Motoko optional ?Text encoding: None = [], Some(x) = [x]
+      // The SDK expects [] for null and [string] for some value
+      const optRef = referralCode?.trim()
+        ? ([referralCode.trim()] as unknown as string | null)
+        : ([] as unknown as string | null);
+      try {
+        return await actor.register(name, email, mobile, optRef);
+      } catch (err) {
+        // Extract meaningful error from Candid reject
+        const msg = String(err);
+        if (msg.includes("already registered")) {
+          throw new Error("already registered");
+        }
+        if (msg.includes("Cannot use your own referral")) {
+          throw new Error("Aap apna referral code use nahi kar sakte.");
+        }
+        // Raw candid errors often have "Reject text:" prefix
+        const rejectMatch = msg.match(/Reject text: (.+?)(?:\n|$)/);
+        if (rejectMatch) throw new Error(rejectMatch[1]);
+        throw new Error(
+          "Registration fail hui. Network check karein aur dobara try karein.",
+        );
+      }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user"] }),
+    onSuccess: () => {
+      // Invalidate and force re-fetch user data
+      qc.invalidateQueries({ queryKey: ["user"] });
+      qc.refetchQueries({ queryKey: ["user"] });
+    },
   });
 }
 
@@ -408,6 +432,7 @@ export function useCreditCommission() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allUsers"] });
       qc.invalidateQueries({ queryKey: ["allTransactions"] });
+      qc.invalidateQueries({ queryKey: ["adminStats"] });
     },
   });
 }

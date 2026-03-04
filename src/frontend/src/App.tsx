@@ -18,6 +18,7 @@ import DealsPage from "./pages/DealsPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
+import SharePage from "./pages/SharePage";
 import WalletPage from "./pages/WalletPage";
 
 // ─── Loading Screen ───────────────────────────────────────────────────────────
@@ -142,6 +143,12 @@ const calculatorRoute = createRoute({
   component: CalculatorPage,
 });
 
+const shareRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/share",
+  component: SharePage,
+});
+
 const walletRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/wallet",
@@ -172,6 +179,7 @@ const routeTree = rootRoute.addChildren([
     homeRoute,
     dealsRoute,
     calculatorRoute,
+    shareRoute,
     walletRoute,
     profileRoute,
     chatRoute,

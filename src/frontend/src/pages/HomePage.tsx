@@ -92,7 +92,7 @@ export default function HomePage() {
         }}
       >
         <div>
-          <h1 className="text-2xl font-bold gold-text-gradient leading-none">
+          <h1 className="text-3xl font-bold gold-text-gradient leading-none">
             Dark Daulat AI
           </h1>
           {user && (
@@ -135,7 +135,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               data-ocid={card.ocid}
-              className="rounded-xl p-3 flex flex-col"
+              className="rounded-xl p-4 flex flex-col min-h-[90px]"
               style={{
                 background:
                   "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.15 0.015 85))",
@@ -146,10 +146,10 @@ export default function HomePage() {
               }}
             >
               {isLoading ? (
-                <div className="animate-shimmer h-5 w-14 rounded mb-1" />
+                <div className="animate-shimmer h-7 w-16 rounded mb-1" />
               ) : (
                 <span
-                  className="text-lg font-bold leading-tight"
+                  className="text-2xl font-bold leading-tight"
                   style={{
                     color: card.gold
                       ? "oklch(0.86 0.14 85)"
@@ -161,7 +161,7 @@ export default function HomePage() {
                 </span>
               )}
               <span
-                className="text-xs mt-1 leading-none"
+                className="text-sm mt-1.5 leading-none"
                 style={{ color: "oklch(0.52 0.01 85)" }}
               >
                 {card.label}
@@ -206,7 +206,7 @@ export default function HomePage() {
             <TrendingUp size={18} style={{ color: "oklch(0.78 0.12 85)" }} />
           </div>
 
-          <div className="flex items-end gap-2 h-20">
+          <div className="flex items-end gap-2 h-32">
             {WEEKLY_DATA.map((d, i) => (
               <motion.div
                 key={d.day}
@@ -219,7 +219,7 @@ export default function HomePage() {
                 <div
                   className="w-full rounded-t-sm"
                   style={{
-                    height: `${(d.amount / maxAmount) * 64}px`,
+                    height: `${(d.amount / maxAmount) * 100}px`,
                     background:
                       i === 5
                         ? "linear-gradient(180deg, oklch(0.88 0.15 88), oklch(0.72 0.11 80))"
@@ -262,27 +262,27 @@ export default function HomePage() {
           />
           <div className="flex items-start gap-3 relative z-10">
             <div
-              className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+              className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
               style={{
                 background: "oklch(0.78 0.12 85 / 0.2)",
                 border: "1px solid oklch(0.78 0.12 85 / 0.4)",
               }}
             >
-              <span className="text-base">🤖</span>
+              <span className="text-xl">🤖</span>
             </div>
-            <div>
+            <div className="flex-1">
               <p
-                className="text-xs font-semibold mb-1"
+                className="text-sm font-bold mb-1.5"
                 style={{ color: "oklch(0.86 0.14 85)" }}
               >
-                AI Tip
+                AI Personalized Tip
               </p>
               <motion.p
                 key={tipIndex}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: tipVisible ? 1 : 0, y: tipVisible ? 0 : 5 }}
                 transition={{ duration: 0.3 }}
-                className="text-sm leading-relaxed"
+                className="text-base leading-relaxed"
                 style={{ color: "oklch(0.82 0.05 85)" }}
               >
                 {AI_TIPS[tipIndex]}
@@ -412,7 +412,7 @@ export default function HomePage() {
             <Link key={to} to={to}>
               <motion.div
                 whileTap={{ scale: 0.95 }}
-                className="rounded-xl p-3 flex flex-col items-center gap-2 cursor-pointer transition-all"
+                className="rounded-xl p-4 flex flex-col items-center gap-2.5 cursor-pointer transition-all min-h-[90px] justify-center"
                 style={{
                   background: primary
                     ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
@@ -426,13 +426,13 @@ export default function HomePage() {
                 }}
               >
                 <Icon
-                  size={24}
+                  size={32}
                   style={{
                     color: primary ? "oklch(0.08 0 0)" : "oklch(0.78 0.12 85)",
                   }}
                 />
                 <span
-                  className="text-sm font-semibold text-center"
+                  className="text-sm font-semibold text-center leading-tight"
                   style={{
                     color: primary ? "oklch(0.08 0 0)" : "oklch(0.82 0.05 85)",
                   }}

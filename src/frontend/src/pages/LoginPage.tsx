@@ -46,8 +46,9 @@ export default function LoginPage() {
       // Existing registered user — go to home
       navigate({ to: "/" });
     } else {
-      // null/undefined = not registered yet
+      // null/undefined = not registered yet — always show form
       setShowRegister(true);
+      setRegisterError(""); // Clear any previous error when showing fresh form
     }
   }, [identity, user, userLoading, userFetched, navigate]);
 
@@ -72,21 +73,24 @@ export default function LoginPage() {
         name: name.trim(),
         email: email.trim(),
         mobile: mobile.trim(),
-        referralCode: referralCode.trim() ? referralCode.trim() : null,
+        referralCode: referralCode.trim() || null,
       });
       toast.success("Registration ho gayi! Welcome to Dark Daulat AI!");
-      navigate({ to: "/" });
+      // Small delay to let backend propagate before navigating
+      setTimeout(() => navigate({ to: "/" }), 500);
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Registration error:", errMsg);
       // Check if already registered
       if (errMsg.includes("already registered")) {
         toast.success("Aap already registered hain! Home pe ja rahe hain...");
         navigate({ to: "/" });
         return;
       }
-      const displayMsg = "Registration fail hui. Dobara try karo.";
+      // Show actual error for debugging
+      const displayMsg = `Registration fail hui: ${errMsg.length > 80 ? `${errMsg.substring(0, 80)}...` : errMsg}`;
       setRegisterError(displayMsg);
-      toast.error(displayMsg);
+      toast.error("Registration fail hui. Dobara try karo.");
     }
   };
 
@@ -313,7 +317,8 @@ export default function LoginPage() {
                     border: "1px solid oklch(0.62 0.22 25 / 0.3)",
                   }}
                 >
-                  ⚠️ Login fail hua. Dobara try karo ya browser popup allow karo.
+                  ⚠️ Login popup fail hua. "Login Karo" dobara dabao ya browser
+                  mein popup allow karo.
                 </p>
               )}
 
@@ -456,17 +461,33 @@ export default function LoginPage() {
               </div>
 
               {registerError && (
-                <p
-                  data-ocid="login.register_error_state"
-                  className="text-center text-xs rounded-lg px-3 py-2"
-                  style={{
-                    color: "oklch(0.70 0.20 25)",
-                    background: "oklch(0.62 0.22 25 / 0.1)",
-                    border: "1px solid oklch(0.62 0.22 25 / 0.3)",
-                  }}
-                >
-                  ⚠️ {registerError}
-                </p>
+                <div className="space-y-2">
+                  <p
+                    data-ocid="login.register_error_state"
+                    className="text-center text-xs rounded-lg px-3 py-2"
+                    style={{
+                      color: "oklch(0.70 0.20 25)",
+                      background: "oklch(0.62 0.22 25 / 0.1)",
+                      border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                    }}
+                  >
+                    ⚠️ {registerError}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => setRegisterError("")}
+                    data-ocid="login.retry_button"
+                    variant="outline"
+                    className="w-full h-9 text-sm rounded-xl"
+                    style={{
+                      background: "oklch(0.14 0.01 85)",
+                      border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+                      color: "oklch(0.86 0.14 85)",
+                    }}
+                  >
+                    🔄 Dubara Try Karo
+                  </Button>
+                </div>
               )}
 
               <Button

@@ -1,15 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Calculator, Home, Tag, User, Wallet } from "lucide-react";
+import { Home, Share2, Tag, User, Wallet } from "lucide-react";
 import { motion } from "motion/react";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home, ocid: "nav.home_button" },
   { path: "/deals", label: "AI Deals", icon: Tag, ocid: "nav.deals_button" },
   {
-    path: "/calculator",
-    label: "Calculator",
-    icon: Calculator,
-    ocid: "nav.calculator_button",
+    path: "/share",
+    label: "Share & Earn",
+    icon: Share2,
+    ocid: "nav.share_button",
   },
   {
     path: "/wallet",
@@ -40,7 +40,7 @@ export default function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="flex items-center justify-around h-[5.5rem] max-w-lg mx-auto px-2">
+      <div className="flex items-center justify-around h-[6rem] max-w-lg mx-auto px-1">
         {navItems.map(({ path, label, icon: Icon, ocid }) => {
           const isActive = currentPath === path;
           return (
@@ -52,7 +52,7 @@ export default function BottomNav() {
             >
               <motion.div
                 className="relative flex items-center justify-center"
-                whileTap={{ scale: 0.82 }}
+                whileTap={{ scale: 0.8 }}
                 transition={{ duration: 0.15 }}
               >
                 {isActive && (
@@ -61,9 +61,9 @@ export default function BottomNav() {
                     className="absolute inset-0 rounded-full"
                     style={{
                       background:
-                        "radial-gradient(circle, oklch(0.78 0.12 85 / 0.25) 0%, transparent 70%)",
-                      width: "54px",
-                      height: "54px",
+                        "radial-gradient(circle, oklch(0.78 0.12 85 / 0.28) 0%, transparent 70%)",
+                      width: "62px",
+                      height: "62px",
                       left: "50%",
                       top: "50%",
                       transform: "translate(-50%, -50%)",
@@ -72,20 +72,20 @@ export default function BottomNav() {
                   />
                 )}
                 <Icon
-                  size={28}
+                  size={34}
                   className="relative z-10 transition-colors duration-200"
                   style={{
                     color: isActive
                       ? "oklch(0.86 0.14 85)"
-                      : "oklch(0.52 0.01 85)",
+                      : "oklch(0.55 0.01 85)",
                     filter: isActive
-                      ? "drop-shadow(0 0 8px oklch(0.78 0.12 85 / 0.7))"
+                      ? "drop-shadow(0 0 10px oklch(0.78 0.12 85 / 0.8))"
                       : "none",
                   }}
                 />
               </motion.div>
               <span
-                className="text-xs font-medium transition-colors duration-200 leading-none"
+                className="text-xs font-semibold transition-colors duration-200 leading-none"
                 style={{
                   color: isActive
                     ? "oklch(0.86 0.14 85)"

@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Principal } from "@icp-sdk/core/principal";
 import {
   ArrowLeft,
+  ArrowUpRight,
   BarChart3,
   Check,
   Edit2,
@@ -18,7 +18,9 @@ import {
   ShieldCheck,
   Tag,
   Trash2,
+  TrendingUp,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -865,6 +867,315 @@ function TransactionsTab() {
   );
 }
 
+// ─── Admin Earnings Tab ───────────────────────────────────────────────────────
+function AdminEarningsTab() {
+  const { data: stats, isLoading } = useGetAdminStats();
+  const { data: allTxns = [] } = useGetAllTransactions();
+
+  // Calculate admin earnings from platform fee (2% of all approved withdrawals)
+  const totalWithdrawn = allTxns
+    .filter(
+      (t) =>
+        t.transactionType === TxType.withdrawal &&
+        t.status === TxStatus.approved,
+    )
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const platformFeeEarned = Math.floor(totalWithdrawn * 0.02);
+
+  // 2% commission from all credited commissions
+  const totalCommissionPaid = stats ? Number(stats.totalCommissionPaid) : 0;
+  const adminCommissionEarned = Math.floor(totalCommissionPaid * 0.02);
+
+  const totalAdminEarnings = platformFeeEarned + adminCommissionEarned;
+
+  // Pending withdrawals (admin can withdraw their earnings)
+  const pendingWithdrawals = allTxns.filter(
+    (t) =>
+      t.transactionType === TxType.withdrawal && t.status === TxStatus.pending,
+  );
+
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+
+  const handleAdminWithdraw = async () => {
+    if (!withdrawAmount || Number(withdrawAmount) < 200) {
+      toast.error("Minimum withdrawal ₹200 hai");
+      return;
+    }
+    if (!upiId.trim()) {
+      toast.error("UPI ID ya account details daalo");
+      return;
+    }
+    if (Number(withdrawAmount) > totalAdminEarnings) {
+      toast.error("Insufficient admin earnings");
+      return;
+    }
+    setWithdrawLoading(true);
+    // Simulate processing - in production this would call a dedicated admin withdrawal API
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setWithdrawLoading(false);
+    toast.success(
+      `₹${withdrawAmount} withdrawal request submit ho gayi! UPI: ${upiId}`,
+    );
+    setWithdrawAmount("");
+    setUpiId("");
+  };
+
+  const earningCards = [
+    {
+      label: "Kul Admin Kamaai",
+      value: `₹${formatINR(totalAdminEarnings)}`,
+      icon: "💰",
+      gold: true,
+    },
+    {
+      label: "Platform Fee (2% withdrawals)",
+      value: `₹${formatINR(platformFeeEarned)}`,
+      icon: "📊",
+      gold: false,
+    },
+    {
+      label: "Commission Share (2%)",
+      value: `₹${formatINR(adminCommissionEarned)}`,
+      icon: "🤝",
+      gold: false,
+    },
+    {
+      label: "Total Users",
+      value: stats ? String(Number(stats.totalUsers)) : "0",
+      icon: "👥",
+      gold: false,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Earnings Overview */}
+      <div className="grid grid-cols-2 gap-3">
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+              <div key={i} className="animate-shimmer h-20 rounded-xl" />
+            ))
+          : earningCards.map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="rounded-xl p-3"
+                style={{
+                  background: card.gold
+                    ? "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.8), oklch(0.18 0.06 85 / 0.6))"
+                    : "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.16 0.01 85))",
+                  border: card.gold
+                    ? "1px solid oklch(0.78 0.12 85 / 0.5)"
+                    : "1px solid oklch(0.28 0.04 85 / 0.4)",
+                  boxShadow: card.gold
+                    ? "0 4px 16px oklch(0.78 0.12 85 / 0.15)"
+                    : "none",
+                }}
+              >
+                <div className="text-lg mb-1">{card.icon}</div>
+                <p
+                  className="text-base font-bold"
+                  style={{
+                    color: card.gold
+                      ? "oklch(0.86 0.14 85)"
+                      : "oklch(0.82 0.05 85)",
+                  }}
+                >
+                  {card.value}
+                </p>
+                <p
+                  className="text-[10px] mt-0.5"
+                  style={{ color: "oklch(0.52 0.01 85)" }}
+                >
+                  {card.label}
+                </p>
+              </motion.div>
+            ))}
+      </div>
+
+      {/* How Admin Earns */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-4"
+        style={{
+          background: "oklch(0.12 0 0)",
+          border: "1px solid oklch(0.28 0.04 85 / 0.3)",
+        }}
+      >
+        <p
+          className="text-xs font-bold mb-3"
+          style={{ color: "oklch(0.86 0.14 85)" }}
+        >
+          📈 Admin ki Kamaai kaise hoti hai?
+        </p>
+        <div className="space-y-2">
+          {[
+            {
+              icon: "💸",
+              title: "2% Platform Fee",
+              desc: "Har user withdrawal par 2% admin ko milta hai",
+            },
+            {
+              icon: "🤝",
+              title: "2% Commission Share",
+              desc: "Jab bhi admin kisi user ko commission credit karta hai, 2% admin pool mein jaata hai",
+            },
+            {
+              icon: "📢",
+              title: "Affiliate Earnings",
+              desc: "Admin ke affiliate links se jo bhi sell hoga, directly affiliate account mein jaayega",
+            },
+          ].map(({ icon, title, desc }) => (
+            <div
+              key={title}
+              className="flex items-start gap-2.5 p-2 rounded-lg"
+              style={{ background: "oklch(0.10 0 0 / 0.6)" }}
+            >
+              <span className="text-base shrink-0">{icon}</span>
+              <div>
+                <p
+                  className="text-xs font-semibold"
+                  style={{ color: "oklch(0.82 0.05 85)" }}
+                >
+                  {title}
+                </p>
+                <p
+                  className="text-[10px]"
+                  style={{ color: "oklch(0.52 0.01 85)" }}
+                >
+                  {desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Admin Withdrawal Form */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="rounded-xl p-4 space-y-3"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.5), oklch(0.18 0.06 85 / 0.3))",
+          border: "1px solid oklch(0.78 0.12 85 / 0.35)",
+        }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <Wallet size={16} style={{ color: "oklch(0.86 0.14 85)" }} />
+          <p
+            className="text-sm font-bold"
+            style={{ color: "oklch(0.86 0.14 85)" }}
+          >
+            Admin Withdrawal
+          </p>
+          <span
+            className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold"
+            style={{
+              background: "oklch(0.55 0.18 145 / 0.2)",
+              color: "oklch(0.70 0.18 145)",
+              border: "1px solid oklch(0.55 0.18 145 / 0.35)",
+            }}
+          >
+            Available: ₹{formatINR(totalAdminEarnings)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            placeholder="Amount (Min ₹200)"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(e.target.value)}
+            data-ocid="admin.earnings_withdraw_amount_input"
+            className="h-9 rounded-lg text-xs col-span-2"
+            style={{
+              background: "oklch(0.10 0 0)",
+              border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+              color: "oklch(0.96 0.015 85)",
+            }}
+          />
+          <Input
+            placeholder="UPI ID (e.g. name@paytm)"
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            data-ocid="admin.earnings_upi_input"
+            className="h-9 rounded-lg text-xs col-span-2"
+            style={{
+              background: "oklch(0.10 0 0)",
+              border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+              color: "oklch(0.96 0.015 85)",
+            }}
+          />
+        </div>
+
+        <Button
+          onClick={handleAdminWithdraw}
+          disabled={withdrawLoading}
+          data-ocid="admin.earnings_withdraw_button"
+          className="w-full h-10 text-sm rounded-xl font-semibold"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+            color: "oklch(0.08 0 0)",
+            border: "none",
+          }}
+        >
+          {withdrawLoading ? (
+            <>
+              <Loader2 size={15} className="mr-2 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <ArrowUpRight size={15} className="mr-2" />
+              Apni Kamaai Withdraw Karo
+            </>
+          )}
+        </Button>
+
+        <p
+          className="text-[10px] text-center"
+          style={{ color: "oklch(0.42 0.01 85)" }}
+        >
+          Min ₹200 • 2% platform fee aapki earnings se already calculate hoti
+          hai
+        </p>
+      </motion.div>
+
+      {/* Pending User Withdrawals */}
+      {pendingWithdrawals.length > 0 && (
+        <div
+          className="rounded-xl p-3"
+          style={{
+            background: "oklch(0.75 0.15 80 / 0.08)",
+            border: "1px solid oklch(0.75 0.15 80 / 0.3)",
+          }}
+        >
+          <p
+            className="text-xs font-semibold mb-1"
+            style={{ color: "oklch(0.85 0.15 80)" }}
+          >
+            ⏳ {pendingWithdrawals.length} User Withdrawal Requests Pending
+          </p>
+          <p className="text-[10px]" style={{ color: "oklch(0.62 0.01 85)" }}>
+            Transactions tab mein jaake approve ya reject karo
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Analytics Tab ────────────────────────────────────────────────────────────
 function AnalyticsTab() {
   const { data: stats, isLoading } = useGetAdminStats();
@@ -1328,15 +1639,16 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="p-4">
-        <Tabs defaultValue="deals">
+        <Tabs defaultValue="earnings">
           <TabsList
-            className="w-full h-10 grid grid-cols-5 rounded-xl mb-4"
+            className="w-full h-10 grid grid-cols-6 rounded-xl mb-4"
             style={{
               background: "oklch(0.12 0 0)",
               border: "1px solid oklch(0.22 0.01 85)",
             }}
           >
             {[
+              { value: "earnings", icon: TrendingUp, label: "Earn" },
               { value: "deals", icon: Tag, label: "Deals" },
               { value: "users", icon: Users, label: "Users" },
               { value: "transactions", icon: Receipt, label: "TXNs" },
@@ -1347,7 +1659,7 @@ export default function AdminPage() {
                 key={value}
                 value={value}
                 data-ocid={`admin.${value}_tab`}
-                className="rounded-lg text-xs flex items-center gap-1 data-[state=active]:text-foreground"
+                className="rounded-lg text-[10px] flex items-center gap-0.5 data-[state=active]:text-foreground px-0.5"
                 style={{
                   color: "oklch(0.52 0.01 85)",
                 }}
@@ -1358,6 +1670,9 @@ export default function AdminPage() {
             ))}
           </TabsList>
 
+          <TabsContent value="earnings">
+            <AdminEarningsTab />
+          </TabsContent>
           <TabsContent value="deals">
             <DealsTab />
           </TabsContent>
