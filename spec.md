@@ -1,38 +1,37 @@
 # Dark Daulat AI
 
 ## Current State
-Full-stack affiliate earning app with:
-- Internet Identity authentication
-- User registration with name (email/mobile stored only in frontend state, NOT in backend)
-- Deals marketplace with admin CRUD
-- Wallet with withdrawal requests
-- Referral system with 5% lifetime bonus
-- Profit calculator
-- AI chatbot
-- Admin dashboard
-
-**Critical Bug:** `getUser()` backend function has `AccessControl.hasPermission(caller, #user)` check which traps/throws for unregistered users. When a new user logs in for the first time, `getUser()` is called to determine if they need to register — but since they are not registered, they have no `#user` role, so the backend throws an error. The frontend never receives `null` (not registered), so `userQueryDone` stays false and the registration form never shows. Result: **registration is permanently broken for new users.**
-
-Also: email and mobile number are collected in the frontend registration form but are NOT saved to the backend User record — they are only used for local validation.
+- App has Internet Identity login + registration form (name, email, mobile)
+- Registration consistently fails despite multiple fix attempts
+- Admin panel shows "Access Denied" because admin check logic is broken
+- Profile page shows "Admin Panel" link but admin access fails
+- Deals page has 60 sample Indian products (Amazon-only source, no multi-platform)
+- Platform has full backend: users, deals, transactions, wallet, leaderboard, affiliate accounts
 
 ## Requested Changes (Diff)
 
 ### Add
-- `email` field to `PersistentUser` type stored in backend
-- `mobile` field to `PersistentUser` type stored in backend
-- `register()` function updated to accept `email` and `mobile` as parameters
+- Multi-platform deals: add Flipkart, Alibaba, Fiverr-style products to sample deals (not just Amazon)
+- Each platform clearly labeled with a badge (Amazon, Flipkart, Alibaba, Fiverr)
+- Admin panel: show "E-Commerce Platform" field in deal form so admin can tag which platform a deal is from
+- Deals page: filter tab for each platform (Amazon, Flipkart, Alibaba, Fiverr)
+- Info section explaining how users earn: buy through affiliate link = commission to user + 2% to admin, share = tracking + bonus
 
 ### Modify
-- `getUser()` — REMOVE the `AccessControl.hasPermission` authorization check entirely. Any caller (including anonymous/unregistered) must be able to call `getUser()` and receive `null` if not registered. This is the root cause fix.
-- `register(name, referralCode)` → `register(name, email, mobile, referralCode)` — accept and store email and mobile
-- `User` / `PersistentUser` type: add `email: Text` and `mobile: Text` fields
+- **CRITICAL FIX 1 - Registration**: The `useRegister` mutation needs to handle the ICP Candid optional parameter correctly. The `register` function signature is `register(name, email, mobile, referralCode: string | null)`. The backend.d.ts says `string | null` but ICP Candid encodes optional as `[] | [string]`. Current code already does this with `refCodeCandid as any` but it still fails. The real fix: wrap entire mutation in better error handling, add a fallback where if register fails with "already registered" it treats as success and navigates home.
+- **CRITICAL FIX 2 - Admin Panel "Access Denied"**: AdminPage.tsx needs to check `user.isAdmin` properly. The current `useIsAdmin()` hook queries `getUser()` again - this may race with registration. Fix: in AdminPage, use `useGetUser()` directly and check `user?.isAdmin === true`, not `useIsAdmin()`. Also add `isCallerAdmin()` as a fallback.
+- **CRITICAL FIX 3 - Login "already authenticated" loop**: When `login()` is called and user is already authenticated, it throws "User is already authenticated" error. The LoginPage handles this but the flow breaks. Fix: detect this case clearly and skip the popup call entirely, just use existing identity.
+- Deal cards: add clear platform badge (Amazon/Flipkart/Alibaba/Fiverr) on each product image
+- Deals page platform filter tabs
+- AdminPage: add "Platform" dropdown to deal form (Amazon, Flipkart, Alibaba, Fiverr)
 
 ### Remove
-- Nothing removed
+- Nothing to remove
 
 ## Implementation Plan
-1. Update `PersistentUser` type to add `email: Text` and `mobile: Text`
-2. Update `register()` to accept `email: Text` and `mobile: Text` parameters and store them
-3. Fix `getUser()` to have NO authorization check — simply return `?User` for any caller (null if not registered)
-4. Update frontend `useRegister` mutation to pass email and mobile
-5. Update frontend `LoginPage` `handleRegister` to pass email and mobile to the mutation
+1. Fix LoginPage.tsx: better handling of "already authenticated" case - if `isAlreadyLoggedIn` is true when login button clicked, skip `login()` call entirely and just check user directly
+2. Fix AdminPage.tsx: replace `useIsAdmin()` with direct `useGetUser()` check + also try `actor.isCallerAdmin()` as backup
+3. Add multi-platform products to SAMPLE_DEALS in DealsPage.tsx - add 40 more products from Flipkart, Alibaba, Fiverr categories with platform field in trendingTag
+4. Add platform filter tabs: Amazon, Flipkart, Alibaba, Fiverr
+5. Add platform badge overlay on deal card images
+6. Add platform field to AdminPage DealForm

@@ -49,13 +49,32 @@ export function useGetUser() {
 
 export function useIsAdmin() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
   return useQuery<boolean>({
-    queryKey: ["isAdmin"],
+    queryKey: ["isAdmin", identity?.getPrincipal().toString()],
     queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
+      if (!actor || !identity) return false;
+      if (identity.getPrincipal().isAnonymous()) return false;
+      try {
+        // Check user.isAdmin from backend user record
+        const result = await actor.getUser();
+        if (result === null || result === undefined) return false;
+        if (Array.isArray(result)) {
+          return result.length > 0
+            ? Boolean((result[0] as User).isAdmin)
+            : false;
+        }
+        return Boolean((result as User).isAdmin);
+      } catch {
+        return false;
+      }
     },
-    enabled: !!actor && !isFetching,
+    enabled:
+      !!actor &&
+      !isFetching &&
+      !!identity &&
+      !identity.getPrincipal().isAnonymous(),
+    staleTime: 0,
   });
 }
 
@@ -182,15 +201,25 @@ export function useRegister() {
       mobile: string;
       referralCode: string | null;
     }) => {
+      console.log("[useRegister] mutationFn called", {
+        name,
+        email,
+        mobile,
+        referralCode,
+      });
       if (!actor) throw new Error("Actor not ready. Dobara try karein.");
-      // Motoko optional ?Text encoding: None = [], Some(x) = [x]
-      // The SDK expects [] for null and [string] for some value
-      const optRef = referralCode?.trim()
-        ? ([referralCode.trim()] as unknown as string | null)
-        : ([] as unknown as string | null);
+      // Backend register() signature: register(name, email, mobile, referralCode: string | null)
+      // Pass null directly — the ICP SDK handles optional Text encoding automatically
+      // ICP Candid: optional Text must be [] for None, [value] for Some
+      // Passing JS null directly causes "Failed to parse Candid" errors
+      const refCodeCandid: [string] | [] = referralCode?.trim()
+        ? [referralCode.trim()]
+        : [];
       try {
-        return await actor.register(name, email, mobile, optRef);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await actor.register(name, email, mobile, refCodeCandid as any);
       } catch (err) {
+        console.error("[useRegister] Backend error:", err);
         // Extract meaningful error from Candid reject
         const msg = String(err);
         if (msg.includes("already registered")) {
@@ -202,9 +231,9 @@ export function useRegister() {
         // Raw candid errors often have "Reject text:" prefix
         const rejectMatch = msg.match(/Reject text: (.+?)(?:\n|$)/);
         if (rejectMatch) throw new Error(rejectMatch[1]);
-        throw new Error(
-          "Registration fail hui. Network check karein aur dobara try karein.",
-        );
+        const trapMatch = msg.match(/trap: (.+?)(?:\n|$)/i);
+        if (trapMatch) throw new Error(trapMatch[1]);
+        throw new Error(`Registration fail hui: ${msg.slice(0, 120)}`);
       }
     },
     onSuccess: () => {
@@ -446,7 +475,11 @@ export function useGetAffiliateAccount() {
     queryKey: ["affiliateAccount"],
     queryFn: async () => {
       if (!actor || !identity) return null;
-      return actor.getAffiliateAccount(identity.getPrincipal());
+      const result = await actor.getAffiliateAccount(identity.getPrincipal());
+      // Handle Candid optional unwrapping — may come as null, undefined, or [details]
+      if (result === null || result === undefined) return null;
+      if (Array.isArray(result)) return result.length > 0 ? result[0] : null;
+      return result;
     },
     enabled: !!actor && !isFetching && !!identity,
   });
@@ -498,8 +531,9 @@ export function useSaveAdminAffiliateSettings() {
       if (!actor) throw new Error("Actor not ready");
       return actor.saveAdminAffiliateSettings({
         ...settings,
-        createdAt: BigInt(0),
-        lastUpdated: BigInt(0),
+        // createdAt is required (Time = bigint), lastUpdated is optional
+        createdAt: BigInt(Date.now()) * 1_000_000n,
+        lastUpdated: undefined,
       });
     },
     onSuccess: () =>

@@ -24,13 +24,14 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Deal, Transaction, User } from "../backend.d";
 import {
   TransactionStatus as TxStatus,
   TransactionType as TxType,
 } from "../backend.d";
+import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAddDeal,
@@ -38,13 +39,15 @@ import {
   useCreditCommission,
   useDeleteDeal,
   useGetAdminStats,
+  useGetAffiliateAccount,
   useGetAllAdminAffiliateSettings,
   useGetAllDeals,
   useGetAllTransactions,
   useGetAllUsers,
-  useIsAdmin,
+  useGetUser,
   useRejectWithdrawal,
   useSaveAdminAffiliateSettings,
+  useSaveAffiliateAccount,
   useUpdateDeal,
 } from "../hooks/useQueries";
 
@@ -1253,6 +1256,11 @@ function AffiliateTab() {
     useGetAllAdminAffiliateSettings();
   const saveSettings = useSaveAdminAffiliateSettings();
 
+  // Admin's own payout account (UPI)
+  const { data: affiliateAccount, isLoading: payoutLoading } =
+    useGetAffiliateAccount();
+  const savePayoutMutation = useSaveAffiliateAccount();
+
   const existing = allSettings[0];
 
   const [platformName, setPlatformName] = useState(
@@ -1266,6 +1274,13 @@ function AffiliateTab() {
   );
   const [saved, setSaved] = useState(false);
 
+  // Admin payout account state
+  const [adminUpiId, setAdminUpiId] = useState("");
+  const [adminAccountHolder, setAdminAccountHolder] = useState("");
+  const [adminBankAccount, setAdminBankAccount] = useState("");
+  const [adminIfscCode, setAdminIfscCode] = useState("");
+  const [payoutSaved, setPayoutSaved] = useState(false);
+
   // Pre-fill when data loads
   const [prefilled, setPrefilled] = useState(false);
   if (!prefilled && existing) {
@@ -1275,6 +1290,16 @@ function AffiliateTab() {
     setNotes(existing.notes);
     setContactEmail(existing.contactEmail ?? "");
     setPrefilled(true);
+  }
+
+  // Pre-fill payout account
+  const [payoutPrefilled, setPayoutPrefilled] = useState(false);
+  if (!payoutPrefilled && affiliateAccount) {
+    setAdminUpiId(affiliateAccount.upiId ?? "");
+    setAdminAccountHolder(affiliateAccount.accountHolderName ?? "");
+    setAdminBankAccount(affiliateAccount.bankAccountNumber ?? "");
+    setAdminIfscCode(affiliateAccount.ifscCode ?? "");
+    setPayoutPrefilled(true);
   }
 
   const inputStyle = {
@@ -1306,8 +1331,180 @@ function AffiliateTab() {
     }
   };
 
+  const handleSavePayout = async () => {
+    if (!adminUpiId.trim()) {
+      toast.error("UPI ID daalna zaroori hai");
+      return;
+    }
+    try {
+      await savePayoutMutation.mutateAsync({
+        upiId: adminUpiId.trim(),
+        accountHolderName: adminAccountHolder.trim() || undefined,
+        bankAccountNumber: adminBankAccount.trim() || undefined,
+        ifscCode: adminIfscCode.trim() || undefined,
+      });
+      setPayoutSaved(true);
+      toast.success("Admin payout account save ho gaya! ✅");
+      setTimeout(() => setPayoutSaved(false), 3000);
+    } catch {
+      toast.error("Payout account save fail hua");
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* ── Admin Payout Account (TOP PRIORITY) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-4 space-y-3"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.7), oklch(0.18 0.06 85 / 0.5))",
+          border: "1px solid oklch(0.78 0.12 85 / 0.5)",
+          boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.12)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <Wallet size={16} style={{ color: "oklch(0.86 0.14 85)" }} />
+          <p
+            className="text-sm font-bold"
+            style={{ color: "oklch(0.86 0.14 85)" }}
+          >
+            💳 Admin Ka Payout Account
+          </p>
+          {affiliateAccount?.upiId && (
+            <span
+              className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold"
+              style={{
+                background: "oklch(0.55 0.18 145 / 0.2)",
+                color: "oklch(0.70 0.18 145)",
+                border: "1px solid oklch(0.55 0.18 145 / 0.35)",
+              }}
+            >
+              ✅ Saved
+            </span>
+          )}
+        </div>
+        <p className="text-xs" style={{ color: "oklch(0.62 0.01 85)" }}>
+          Yahan apna UPI ID ya bank account save karo jahan admin ki kamaai
+          aayegi.
+        </p>
+
+        {payoutLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((i) => (
+              <div key={i} className="animate-shimmer h-9 rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                UPI ID * (Jaise: admin@upi)
+              </Label>
+              <Input
+                value={adminUpiId}
+                onChange={(e) => setAdminUpiId(e.target.value)}
+                data-ocid="admin.payout_upi_input"
+                placeholder="yourname@paytm / @gpay / @upi"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Account Holder Name (Optional)
+              </Label>
+              <Input
+                value={adminAccountHolder}
+                onChange={(e) => setAdminAccountHolder(e.target.value)}
+                data-ocid="admin.payout_holder_input"
+                placeholder="Aapka poora naam"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  Bank Account (Optional)
+                </Label>
+                <Input
+                  value={adminBankAccount}
+                  onChange={(e) => setAdminBankAccount(e.target.value)}
+                  data-ocid="admin.payout_bank_input"
+                  placeholder="Account number"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <Label
+                  className="text-xs mb-1 block"
+                  style={{ color: "oklch(0.62 0.01 85)" }}
+                >
+                  IFSC Code (Optional)
+                </Label>
+                <Input
+                  value={adminIfscCode}
+                  onChange={(e) =>
+                    setAdminIfscCode(e.target.value.toUpperCase())
+                  }
+                  data-ocid="admin.payout_ifsc_input"
+                  placeholder="SBIN0001234"
+                  className="h-9 rounded-lg"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSavePayout}
+              disabled={savePayoutMutation.isPending}
+              data-ocid="admin.payout_save_button"
+              className="w-full h-10 text-sm rounded-lg font-semibold"
+              style={
+                payoutSaved
+                  ? {
+                      background:
+                        "linear-gradient(135deg, oklch(0.45 0.18 160), oklch(0.58 0.20 155))",
+                      color: "oklch(0.96 0.01 145)",
+                      border: "none",
+                    }
+                  : {
+                      background:
+                        "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                      color: "oklch(0.08 0 0)",
+                      border: "none",
+                      boxShadow: "0 4px 16px oklch(0.78 0.12 85 / 0.3)",
+                    }
+              }
+            >
+              {savePayoutMutation.isPending ? (
+                <>
+                  <Loader2 size={14} className="animate-spin mr-2" />
+                  Save ho raha hai...
+                </>
+              ) : payoutSaved ? (
+                "✅ Admin Payout Account Saved!"
+              ) : (
+                "Admin Payout Account Save Karo"
+              )}
+            </Button>
+          </div>
+        )}
+      </motion.div>
+
       {/* Admin Commission Info Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -1315,8 +1512,8 @@ function AffiliateTab() {
         className="rounded-xl p-4"
         style={{
           background:
-            "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.6), oklch(0.18 0.06 85 / 0.4))",
-          border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+            "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.15 0.01 85))",
+          border: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
       >
         <p
@@ -1358,7 +1555,7 @@ function AffiliateTab() {
           className="text-xs font-semibold mb-1"
           style={{ color: "oklch(0.86 0.14 85)" }}
         >
-          Affiliate Platform Settings
+          🛒 Affiliate Platform Settings (Amazon/Flipkart)
         </p>
 
         {isLoading ? (
@@ -1491,7 +1688,34 @@ function AffiliateTab() {
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { identity } = useInternetIdentity();
-  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const { actor } = useActor();
+  const { data: user, isLoading: userLoading } = useGetUser();
+
+  // Direct backend check for admin status — fallback to isCallerAdmin()
+  const [callerIsAdmin, setCallerIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (actor && identity && !identity.getPrincipal().isAnonymous()) {
+      actor
+        .isCallerAdmin()
+        .then((result) => {
+          console.log("[AdminPage] isCallerAdmin result:", result);
+          setCallerIsAdmin(result);
+        })
+        .catch((err) => {
+          console.error("[AdminPage] isCallerAdmin error:", err);
+          setCallerIsAdmin(false);
+        });
+    } else if (identity?.getPrincipal().isAnonymous()) {
+      setCallerIsAdmin(false);
+    }
+  }, [actor, identity]);
+
+  // Admin is valid if EITHER user.isAdmin is true OR isCallerAdmin() returned true
+  const isAdminUser = user?.isAdmin === true || callerIsAdmin === true;
+
+  // Still loading if: user query running OR callerIsAdmin not yet checked
+  const adminLoading = userLoading || callerIsAdmin === null;
 
   if (!identity) {
     return (
@@ -1529,19 +1753,26 @@ export default function AdminPage() {
     );
   }
 
+  // Show loading spinner WHILE checks are in progress — never show "Access Denied" prematurely
   if (adminLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={{ background: "oklch(0.06 0 0)" }}
+      >
         <Loader2
           size={32}
           className="animate-spin"
           style={{ color: "oklch(0.78 0.12 85)" }}
         />
+        <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
+          Admin access check ho raha hai...
+        </p>
       </div>
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdminUser) {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"

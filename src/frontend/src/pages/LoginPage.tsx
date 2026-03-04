@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  ChevronDown,
+  ChevronUp,
   Fingerprint,
   Info,
   Loader2,
@@ -11,49 +13,89 @@ import {
   Sparkles,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useGetUser, useRegister } from "../hooks/useQueries";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, identity, isLoggingIn, isInitializing, isLoginError } =
-    useInternetIdentity();
+  const {
+    login,
+    identity,
+    isLoggingIn,
+    isInitializing,
+    isLoginError,
+    loginError,
+  } = useInternetIdentity();
   const {
     data: user,
     isLoading: userLoading,
     isFetched: userFetched,
+    refetch: refetchUser,
   } = useGetUser();
   const registerMutation = useRegister();
 
   const [showRegister, setShowRegister] = useState(false);
   const [registerError, setRegisterError] = useState("");
+  const [showRawError, setShowRawError] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const registerShownRef = useRef(false); // Prevent re-triggering form show
 
-  // After auth, check if registered — handle both cases: fresh login and existing session
+  // If identity is already available (non-anonymous), we don't need the login button
+  const isAlreadyLoggedIn =
+    !!identity && !identity.getPrincipal().isAnonymous();
+
+  // Is "already authenticated" error (happens when login() called while already logged in)
+  const isAlreadyAuthError =
+    isLoginError &&
+    (loginError?.message?.includes("already authenticated") ||
+      loginError?.message?.includes("User is already authenticated"));
+
+  // Show loading while initializing OR while identity confirmed but user query running
+  const isCheckingUser = isAlreadyLoggedIn && (userLoading || !userFetched);
+
+  // Core effect: when identity + user query are ready, decide what to show
   useEffect(() => {
-    if (!identity) return; // Not logged in yet
-    if (identity.getPrincipal().isAnonymous()) return; // Anonymous, wait for real identity
-    if (userLoading) return; // Wait for user query to finish
-    if (!userFetched) return; // Query hasn't run yet
+    if (!isAlreadyLoggedIn) return; // Not logged in yet, nothing to do
+    if (userLoading || !userFetched) return; // Wait for user query to settle
 
-    // user is either a User object or null/undefined
+    // If already shown register (prevent loop from re-renders)
+    if (registerShownRef.current && showRegister) return;
+
     if (user && typeof user === "object" && "name" in user) {
-      // Existing registered user — go to home
+      // Registered user → go home
+      console.log("[LoginPage] User found, navigating to home");
       navigate({ to: "/" });
     } else {
-      // null/undefined = not registered yet — always show form
+      // Not registered → show registration form
+      console.log("[LoginPage] No user found, showing register form");
+      registerShownRef.current = true;
       setShowRegister(true);
-      setRegisterError(""); // Clear any previous error when showing fresh form
+      setRegisterError("");
     }
-  }, [identity, user, userLoading, userFetched, navigate]);
+  }, [
+    isAlreadyLoggedIn,
+    user,
+    userLoading,
+    userFetched,
+    navigate,
+    showRegister,
+  ]);
 
   const handleRegister = async () => {
+    console.log("[LoginPage] handleRegister called", {
+      name,
+      email,
+      mobile,
+      referralCode,
+    });
     setRegisterError("");
+    setShowRawError(false);
+
     if (!name.trim()) {
       toast.error("Naam daalna zaroori hai!");
       return;
@@ -68,37 +110,63 @@ export default function LoginPage() {
       toast.error("10 digit ka sahi mobile number daalna zaroori hai!");
       return;
     }
+
     try {
+      console.log("[LoginPage] Calling registerMutation.mutateAsync...");
       await registerMutation.mutateAsync({
         name: name.trim(),
         email: email.trim(),
         mobile: mobile.trim(),
         referralCode: referralCode.trim() || null,
       });
-      toast.success("Registration ho gayi! Welcome to Dark Daulat AI!");
+      console.log("[LoginPage] Registration success!");
+      toast.success("Registration ho gayi! Welcome to Dark Daulat AI! 🎉");
       // Small delay to let backend propagate before navigating
       setTimeout(() => navigate({ to: "/" }), 500);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.error("Registration error:", errMsg);
+      console.error("[LoginPage] Registration error:", errMsg);
+
       // Check if already registered
       if (errMsg.includes("already registered")) {
         toast.success("Aap already registered hain! Home pe ja rahe hain...");
-        navigate({ to: "/" });
+        setTimeout(() => navigate({ to: "/" }), 500);
         return;
       }
-      // Show actual error for debugging
-      const displayMsg = `Registration fail hui: ${errMsg.length > 80 ? `${errMsg.substring(0, 80)}...` : errMsg}`;
+
+      // Show prominent error message
+      const displayMsg =
+        errMsg.length > 200 ? `${errMsg.substring(0, 200)}...` : errMsg;
       setRegisterError(displayMsg);
-      toast.error("Registration fail hui. Dobara try karo.");
     }
   };
 
-  // Show loading while initializing OR while identity is confirmed but user query is running
-  const isCheckingUser =
-    !!identity && !identity.getPrincipal().isAnonymous() && userLoading;
+  const handleLoginButtonClick = () => {
+    console.log(
+      "[LoginPage] Login button clicked, isAlreadyLoggedIn:",
+      isAlreadyLoggedIn,
+    );
 
-  if (isInitializing || isCheckingUser) {
+    // CRITICAL: If already logged in, NEVER call login() — it causes "already authenticated" error
+    if (isAlreadyLoggedIn) {
+      if (user && typeof user === "object" && "name" in user) {
+        navigate({ to: "/" });
+      } else if (userFetched) {
+        // User query done, not registered → show form
+        registerShownRef.current = true;
+        setShowRegister(true);
+      } else {
+        // Trigger user refetch
+        refetchUser();
+      }
+      return;
+    }
+
+    // User is not logged in → open II popup
+    login();
+  };
+
+  if (isInitializing) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -126,7 +194,42 @@ export default function LoginPage() {
             style={{ color: "oklch(0.78 0.12 85)" }}
           />
           <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
-            {isCheckingUser ? "Account check ho raha hai..." : "Loading..."}
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCheckingUser && !showRegister) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "oklch(0.06 0 0)" }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.14 0.03 85), oklch(0.20 0.05 85))",
+              border: "2px solid oklch(0.78 0.12 85 / 0.4)",
+            }}
+          >
+            <span
+              className="text-2xl font-bold"
+              style={{ color: "oklch(0.86 0.14 85)" }}
+            >
+              ₹
+            </span>
+          </div>
+          <Loader2
+            className="animate-spin"
+            size={28}
+            style={{ color: "oklch(0.78 0.12 85)" }}
+          />
+          <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
+            Account check ho raha hai...
           </p>
         </div>
       </div>
@@ -261,7 +364,7 @@ export default function LoginPage() {
                   },
                   {
                     icon: Info,
-                    text: "Pehli baar login par account automatically ban jaata hai",
+                    text: "Pehli baar login par naam, email, mobile bharkar account banao",
                   },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-start gap-2.5">
@@ -281,7 +384,7 @@ export default function LoginPage() {
               </div>
 
               <Button
-                onClick={login}
+                onClick={handleLoginButtonClick}
                 disabled={isLoggingIn}
                 data-ocid="login.login_button"
                 className="w-full h-12 text-base font-semibold rounded-xl"
@@ -298,6 +401,11 @@ export default function LoginPage() {
                     <Loader2 size={18} className="mr-2 animate-spin" />
                     Login ho raha hai...
                   </>
+                ) : isAlreadyLoggedIn ? (
+                  <>
+                    <Fingerprint size={18} className="mr-2" />
+                    Dashboard Kholein
+                  </>
                 ) : (
                   <>
                     <Fingerprint size={18} className="mr-2" />
@@ -306,8 +414,8 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              {/* Login error message */}
-              {isLoginError && (
+              {/* Real login errors only (not "already authenticated") */}
+              {isLoginError && !isAlreadyAuthError && (
                 <p
                   data-ocid="login.error_state"
                   className="text-center text-xs rounded-lg px-3 py-2"
@@ -317,8 +425,8 @@ export default function LoginPage() {
                     border: "1px solid oklch(0.62 0.22 25 / 0.3)",
                   }}
                 >
-                  ⚠️ Login popup fail hua. "Login Karo" dobara dabao ya browser
-                  mein popup allow karo.
+                  ⚠️ Login popup band ho gaya ya block hua. Browser mein popup
+                  allow karo phir dobara "Login Karo" dabao.
                 </p>
               )}
 
@@ -333,7 +441,7 @@ export default function LoginPage() {
                 }}
               >
                 💡 Pehli baar? Login dabao — popup khulega, wahan fingerprint ya
-                PIN se verify karo, automatically account ban jaega!
+                PIN se verify karo, phir details bhar kar account banao!
               </p>
             </div>
           ) : (
@@ -461,32 +569,78 @@ export default function LoginPage() {
               </div>
 
               {registerError && (
-                <div className="space-y-2">
-                  <p
-                    data-ocid="login.register_error_state"
-                    className="text-center text-xs rounded-lg px-3 py-2"
-                    style={{
-                      color: "oklch(0.70 0.20 25)",
-                      background: "oklch(0.62 0.22 25 / 0.1)",
-                      border: "1px solid oklch(0.62 0.22 25 / 0.3)",
-                    }}
-                  >
-                    ⚠️ {registerError}
-                  </p>
-                  <Button
+                <div
+                  data-ocid="login.register_error_state"
+                  className="rounded-xl p-4 space-y-3"
+                  style={{
+                    background: "oklch(0.62 0.22 25 / 0.12)",
+                    border: "1px solid oklch(0.62 0.22 25 / 0.4)",
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-base shrink-0">⚠️</span>
+                    <div className="flex-1">
+                      <p
+                        className="text-sm font-semibold mb-0.5"
+                        style={{ color: "oklch(0.75 0.22 25)" }}
+                      >
+                        Registration fail hui
+                      </p>
+                      <p
+                        className="text-xs leading-relaxed"
+                        style={{ color: "oklch(0.68 0.18 25)" }}
+                      >
+                        {registerError}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Expandable raw error detail */}
+                  <button
                     type="button"
-                    onClick={() => setRegisterError("")}
-                    data-ocid="login.retry_button"
-                    variant="outline"
-                    className="w-full h-9 text-sm rounded-xl"
-                    style={{
-                      background: "oklch(0.14 0.01 85)",
-                      border: "1px solid oklch(0.78 0.12 85 / 0.4)",
-                      color: "oklch(0.86 0.14 85)",
-                    }}
+                    onClick={() => setShowRawError(!showRawError)}
+                    className="flex items-center gap-1 text-[10px]"
+                    style={{ color: "oklch(0.55 0.12 25)" }}
                   >
-                    🔄 Dubara Try Karo
-                  </Button>
+                    {showRawError ? (
+                      <ChevronUp size={11} />
+                    ) : (
+                      <ChevronDown size={11} />
+                    )}
+                    {showRawError ? "Error chhupao" : "Poora error dekho"}
+                  </button>
+                  {showRawError && (
+                    <p
+                      className="text-[10px] p-2 rounded-lg font-mono break-all"
+                      style={{
+                        background: "oklch(0.08 0 0)",
+                        color: "oklch(0.52 0.01 85)",
+                        border: "1px solid oklch(0.18 0 0)",
+                      }}
+                    >
+                      {registerError}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setRegisterError("");
+                        setShowRawError(false);
+                      }}
+                      data-ocid="login.retry_button"
+                      variant="outline"
+                      className="flex-1 h-9 text-sm rounded-xl"
+                      style={{
+                        background: "oklch(0.14 0.01 85)",
+                        border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+                        color: "oklch(0.86 0.14 85)",
+                      }}
+                    >
+                      🔄 Dobara Try Karo
+                    </Button>
+                  </div>
                 </div>
               )}
 

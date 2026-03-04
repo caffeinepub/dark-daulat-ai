@@ -16,9 +16,49 @@ import type { Deal } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useGetActiveDeals, useTrackShare } from "../hooks/useQueries";
 
-// 60 sample Indian affiliate products across categories
+// Platform detection helper
+function getPlatform(deal: Deal): { name: string; color: string; bg: string } {
+  const link = deal.affiliateLink.toLowerCase();
+  const tag = deal.trendingTag.toLowerCase();
+  if (
+    link.includes("flipkart") ||
+    link.includes("fkrt") ||
+    tag.includes("flipkart")
+  )
+    return {
+      name: "Flipkart",
+      color: "oklch(0.95 0.01 250)",
+      bg: "oklch(0.45 0.22 250)",
+    };
+  if (
+    link.includes("alibaba") ||
+    link.includes("aliexpress") ||
+    link.includes("s.click.ali") ||
+    tag.includes("alibaba") ||
+    tag.includes("aliexpress")
+  )
+    return {
+      name: "AliExpress",
+      color: "oklch(0.95 0.01 25)",
+      bg: "oklch(0.55 0.24 25)",
+    };
+  if (link.includes("fiverr") || tag.includes("fiverr") || tag.includes("gig"))
+    return {
+      name: "Fiverr",
+      color: "oklch(0.95 0.02 145)",
+      bg: "oklch(0.45 0.22 145)",
+    };
+  // Default: Amazon
+  return {
+    name: "Amazon",
+    color: "oklch(0.10 0 0)",
+    bg: "oklch(0.72 0.18 65)",
+  };
+}
+
+// 90+ sample Indian affiliate products across Amazon, Flipkart, AliExpress, Fiverr
 const SAMPLE_DEALS: Deal[] = [
-  // Electronics - Earbuds/Headphones
+  // ── AMAZON products ──────────────────────────────────────────────────────
   {
     id: BigInt(1001),
     title: "boAt Airdopes 141 TWS Earbuds",
@@ -64,7 +104,6 @@ const SAMPLE_DEALS: Deal[] = [
     shareCount: BigInt(310),
     createdAt: BigInt(0),
   },
-  // Smartphones
   {
     id: BigInt(1004),
     title: "Redmi 13C 5G (4GB+128GB)",
@@ -110,7 +149,6 @@ const SAMPLE_DEALS: Deal[] = [
     shareCount: BigInt(356),
     createdAt: BigInt(0),
   },
-  // Kitchen
   {
     id: BigInt(1007),
     title: "Philips HL7756 Mixer Grinder 750W",
@@ -128,21 +166,6 @@ const SAMPLE_DEALS: Deal[] = [
   },
   {
     id: BigInt(1008),
-    title: "Prestige Iris 750W Mixer Grinder",
-    imageUrl:
-      "https://images.unsplash.com/photo-1585515320310-259814833e62?w=400&h=400&fit=crop",
-    price: BigInt(1899),
-    affiliateLink: "https://amzn.to/prestigemixer",
-    commissionPercent: BigInt(12),
-    trendingTag: "🍳 Kitchen",
-    targetRegion: "North India",
-    description: "3 speed, 2 SS jars, overload protection.",
-    isActive: true,
-    shareCount: BigInt(156),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1009),
     title: "Butterfly Smart Electric Kettle 1.5L",
     imageUrl:
       "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop",
@@ -157,100 +180,7 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1010),
-    title: "Pigeon Healthifry Digital Air Fryer 4.2L",
-    imageUrl:
-      "https://images.unsplash.com/photo-1648146894073-0c9b0d52a3b4?w=400&h=400&fit=crop",
-    price: BigInt(3499),
-    affiliateLink: "https://amzn.to/pigeonairfryer",
-    commissionPercent: BigInt(14),
-    trendingTag: "🥗 Healthy",
-    targetRegion: "Metro Cities",
-    description: "360° air circulation, 8 preset menus, non-stick basket.",
-    isActive: true,
-    shareCount: BigInt(267),
-    createdAt: BigInt(0),
-  },
-  // Fashion
-  {
-    id: BigInt(1011),
-    title: "Campus Women Casual Shoes",
-    imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
-    price: BigInt(699),
-    affiliateLink: "https://amzn.to/campusshoes",
-    commissionPercent: BigInt(15),
-    trendingTag: "👟 Fashion",
-    targetRegion: "Mumbai, Delhi",
-    description: "Lightweight EVA sole, breathable mesh upper.",
-    isActive: true,
-    shareCount: BigInt(89),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1012),
-    title: "Puma Men Sports T-Shirt (Pack of 2)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-    price: BigInt(1199),
-    affiliateLink: "https://amzn.to/pumatshirt",
-    commissionPercent: BigInt(20),
-    trendingTag: "👕 Trending",
-    targetRegion: "Pan India",
-    description: "Dri-FIT technology, anti-odor, quick dry fabric.",
-    isActive: true,
-    shareCount: BigInt(142),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1013),
-    title: "Wildcraft Laptop Backpack 30L",
-    imageUrl:
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-    price: BigInt(1799),
-    affiliateLink: "https://amzn.to/wildcraftbag",
-    commissionPercent: BigInt(16),
-    trendingTag: "🎒 College",
-    targetRegion: "Students",
-    description: "Water resistant, padded laptop sleeve, USB charging port.",
-    isActive: true,
-    shareCount: BigInt(198),
-    createdAt: BigInt(0),
-  },
-  // Home & Furniture
-  {
-    id: BigInt(1014),
-    title: "Wakefit Orthopedic Memory Foam Pillow",
-    imageUrl:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-    price: BigInt(999),
-    affiliateLink: "https://amzn.to/wakefitpillow",
-    commissionPercent: BigInt(14),
-    trendingTag: "🏠 Home",
-    targetRegion: "Bangalore, Pune",
-    description: "Cervical support, anti-microbial fabric, washable cover.",
-    isActive: true,
-    shareCount: BigInt(145),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1015),
-    title: "Cello Homeware Jumbo Storage Box (Set of 3)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    price: BigInt(849),
-    affiliateLink: "https://amzn.to/cellobox",
-    commissionPercent: BigInt(18),
-    trendingTag: "🏠 Home",
-    targetRegion: "Tier 2 Cities",
-    description: "Multi-purpose boxes, airtight lids, stackable design.",
-    isActive: true,
-    shareCount: BigInt(121),
-    createdAt: BigInt(0),
-  },
-  // Fitness
-  {
-    id: BigInt(1016),
+    id: BigInt(1009),
     title: "Boldfit Resistance Bands Set (5 Bands)",
     imageUrl:
       "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
@@ -265,38 +195,7 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1017),
-    title: "Strauss Yoga Mat 6mm with Bag",
-    imageUrl:
-      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=400&h=400&fit=crop",
-    price: BigInt(699),
-    affiliateLink: "https://amzn.to/straussyoga",
-    commissionPercent: BigInt(20),
-    trendingTag: "🧘 Yoga",
-    targetRegion: "Metro Cities",
-    description: "Anti-slip surface, eco-friendly TPE, includes carry bag.",
-    isActive: true,
-    shareCount: BigInt(276),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1018),
-    title: "Cultsport Skipping Rope (Adjustable)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=400&fit=crop",
-    price: BigInt(399),
-    affiliateLink: "https://amzn.to/cultsportrope",
-    commissionPercent: BigInt(25),
-    trendingTag: "🏃 Cardio",
-    targetRegion: "Pan India",
-    description: "Adjustable length, ball bearing handles, anti-tangle.",
-    isActive: true,
-    shareCount: BigInt(189),
-    createdAt: BigInt(0),
-  },
-  // Books/Education
-  {
-    id: BigInt(1019),
+    id: BigInt(1010),
     title: "Rich Dad Poor Dad - Robert Kiyosaki",
     imageUrl:
       "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop",
@@ -311,86 +210,8 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1020),
-    title: "Atomic Habits - James Clear (Hindi)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=400&fit=crop",
-    price: BigInt(249),
-    affiliateLink: "https://amzn.to/atomichabits",
-    commissionPercent: BigInt(10),
-    trendingTag: "📚 Self-Help",
-    targetRegion: "Hindi Belt",
-    description: "1% better every day. Habit stacking framework.",
-    isActive: true,
-    shareCount: BigInt(367),
-    createdAt: BigInt(0),
-  },
-  // Electronics - Tablets
-  {
-    id: BigInt(1021),
-    title: "Redmi Pad SE (6GB+128GB) WiFi Tablet",
-    imageUrl:
-      "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=400&h=400&fit=crop",
-    price: BigInt(17999),
-    affiliateLink: "https://amzn.to/redmipadse",
-    commissionPercent: BigInt(6),
-    trendingTag: "📱 Tablet",
-    targetRegion: "Students, Families",
-    description: "11 90Hz display, Dolby Atmos, 8000mAh battery.",
-    isActive: true,
-    shareCount: BigInt(234),
-    createdAt: BigInt(0),
-  },
-  // Beauty & Personal Care
-  {
-    id: BigInt(1022),
-    title: "Biotique Bio Cucumber Pore Tightening Toner",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&h=400&fit=crop",
-    price: BigInt(299),
-    affiliateLink: "https://amzn.to/biotiquetoner",
-    commissionPercent: BigInt(20),
-    trendingTag: "💄 Beauty",
-    targetRegion: "Women 18-35",
-    description: "Natural ingredients, alcohol-free, minimizes pores.",
-    isActive: true,
-    shareCount: BigInt(156),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1023),
-    title: "Mamaearth Ubtan Face Wash 100ml",
-    imageUrl:
-      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
-    price: BigInt(249),
-    affiliateLink: "https://amzn.to/mamaearthfacewash",
-    commissionPercent: BigInt(18),
-    trendingTag: "🌿 Natural",
-    targetRegion: "Pan India",
-    description: "Turmeric + Saffron, skin brightening, natural formula.",
-    isActive: true,
-    shareCount: BigInt(298),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1024),
-    title: "Havells Hair Dryer 1800W with 2 Speed",
-    imageUrl:
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop",
-    price: BigInt(1299),
-    affiliateLink: "https://amzn.to/havellsdryer",
-    commissionPercent: BigInt(12),
-    trendingTag: "💆 Hair Care",
-    targetRegion: "Women",
-    description: "Concentrator + diffuser nozzle, cool shot button.",
-    isActive: true,
-    shareCount: BigInt(167),
-    createdAt: BigInt(0),
-  },
-  // Electronics - Power & Charging
-  {
-    id: BigInt(1025),
-    title: "Ambrane 20000mAh Power Bank (20W Fast Charge)",
+    id: BigInt(1011),
+    title: "Ambrane 20000mAh Power Bank (20W)",
     imageUrl:
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&h=400&fit=crop",
     price: BigInt(1299),
@@ -404,209 +225,7 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1026),
-    title: "Portronics Tornado 66W GaN Charger (2 USB-C)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&h=400&fit=crop",
-    price: BigInt(1499),
-    affiliateLink: "https://amzn.to/portronicsgan",
-    commissionPercent: BigInt(16),
-    trendingTag: "⚡ Fast Charge",
-    targetRegion: "Tech Users",
-    description: "66W GaN technology, 2 USB-C ports, compact design.",
-    isActive: true,
-    shareCount: BigInt(312),
-    createdAt: BigInt(0),
-  },
-  // Stationery / Office
-  {
-    id: BigInt(1027),
-    title: "Classmate Pulse Pen (Pack of 20)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=400&h=400&fit=crop",
-    price: BigInt(180),
-    affiliateLink: "https://amzn.to/classmatepen",
-    commissionPercent: BigInt(25),
-    trendingTag: "✏️ Students",
-    targetRegion: "Schools, Colleges",
-    description: "Smooth flow blue ink, rubber grip, 0.7mm tip.",
-    isActive: true,
-    shareCount: BigInt(189),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1028),
-    title: "Sakura A4 Printer Paper 500 Sheets 75gsm",
-    imageUrl:
-      "https://images.unsplash.com/photo-1613387275674-cb92af1c29d1?w=400&h=400&fit=crop",
-    price: BigInt(449),
-    affiliateLink: "https://amzn.to/sakurapaper",
-    commissionPercent: BigInt(15),
-    trendingTag: "📄 Office",
-    targetRegion: "Offices, Homes",
-    description: "75gsm, dual-sided printing, acid-free, ISO certified.",
-    isActive: true,
-    shareCount: BigInt(134),
-    createdAt: BigInt(0),
-  },
-  // Baby & Kids
-  {
-    id: BigInt(1029),
-    title: "Mee Mee Infant Car Seat (0-15 months)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop",
-    price: BigInt(3999),
-    affiliateLink: "https://amzn.to/meemeecarseat",
-    commissionPercent: BigInt(12),
-    trendingTag: "👶 Baby",
-    targetRegion: "Young Parents",
-    description: "5-point safety harness, EPS foam, washable cover.",
-    isActive: true,
-    shareCount: BigInt(156),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1030),
-    title: "Lego Classic Creative Bricks 484pcs",
-    imageUrl:
-      "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&h=400&fit=crop",
-    price: BigInt(2999),
-    affiliateLink: "https://amzn.to/legoclassic",
-    commissionPercent: BigInt(10),
-    trendingTag: "🧸 Kids",
-    targetRegion: "Parents",
-    description: "484 colourful bricks, ages 4+, boosts creativity.",
-    isActive: true,
-    shareCount: BigInt(223),
-    createdAt: BigInt(0),
-  },
-  // Grocery/Food
-  {
-    id: BigInt(1031),
-    title: "Tata Sampann Chana Dal 1kg (Unpolished)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=400&fit=crop",
-    price: BigInt(149),
-    affiliateLink: "https://amzn.to/tatasampann",
-    commissionPercent: BigInt(5),
-    trendingTag: "🌾 Grocery",
-    targetRegion: "Tier 2, 3 Cities",
-    description: "100% unpolished, high protein, no artificial additives.",
-    isActive: true,
-    shareCount: BigInt(98),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1032),
-    title: "Yoga Bar Oats Breakfast Cereal 400g",
-    imageUrl:
-      "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=400&fit=crop",
-    price: BigInt(299),
-    affiliateLink: "https://amzn.to/yogabaroats",
-    commissionPercent: BigInt(15),
-    trendingTag: "🥣 Health Food",
-    targetRegion: "Health Conscious",
-    description: "Whole grain oats, no added sugar, high fibre.",
-    isActive: true,
-    shareCount: BigInt(187),
-    createdAt: BigInt(0),
-  },
-  // Electronics - Cameras
-  {
-    id: BigInt(1033),
-    title: "GoPro HERO11 Black Action Camera",
-    imageUrl:
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop",
-    price: BigInt(34990),
-    affiliateLink: "https://amzn.to/gopro11",
-    commissionPercent: BigInt(5),
-    trendingTag: "📸 Adventure",
-    targetRegion: "Travellers, Vloggers",
-    description: "5.3K60, 27MP, HyperSmooth 5.0, waterproof to 10m.",
-    isActive: true,
-    shareCount: BigInt(145),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1034),
-    title: "Canon EOS 250D DSLR Camera (18-55mm lens)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=400&fit=crop",
-    price: BigInt(49990),
-    affiliateLink: "https://amzn.to/canoneos250d",
-    commissionPercent: BigInt(4),
-    trendingTag: "📸 DSLR",
-    targetRegion: "Photographers",
-    description: "24.1MP, 4K video, 9-point AF, vari-angle touchscreen.",
-    isActive: true,
-    shareCount: BigInt(112),
-    createdAt: BigInt(0),
-  },
-  // Smart Home
-  {
-    id: BigInt(1035),
-    title: "Wipro 9W LED Smart Bulb (Pack of 2)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400&h=400&fit=crop",
-    price: BigInt(799),
-    affiliateLink: "https://amzn.to/wipledo",
-    commissionPercent: BigInt(20),
-    trendingTag: "💡 Smart Home",
-    targetRegion: "Urban Homes",
-    description: "16 million colours, Alexa & Google Home compatible.",
-    isActive: true,
-    shareCount: BigInt(234),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1036),
-    title: "TP-Link Tapo Mini Smart Plug (Wi-Fi)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    price: BigInt(1199),
-    affiliateLink: "https://amzn.to/tapoplug",
-    commissionPercent: BigInt(18),
-    trendingTag: "💡 Smart Home",
-    targetRegion: "Tech Enthusiasts",
-    description: "Schedule timer, energy monitoring, Alexa/Google compatible.",
-    isActive: true,
-    shareCount: BigInt(178),
-    createdAt: BigInt(0),
-  },
-  // Sports & Outdoors
-  {
-    id: BigInt(1037),
-    title: "Decathlon Domyos Sport Shorts Men",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556442806-3b3b3b3b3b3b?w=400&h=400&fit=crop",
-    price: BigInt(599),
-    affiliateLink: "https://amzn.to/decathlonshorts",
-    commissionPercent: BigInt(22),
-    trendingTag: "🏋️ Sports",
-    targetRegion: "Gym Goers",
-    description: "Lightweight, moisture wicking, side pockets.",
-    isActive: true,
-    shareCount: BigInt(203),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1038),
-    title: "Cosco Champion Badminton Racket Set",
-    imageUrl:
-      "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=400&fit=crop",
-    price: BigInt(899),
-    affiliateLink: "https://amzn.to/coscobadminton",
-    commissionPercent: BigInt(20),
-    trendingTag: "🏸 Sports",
-    targetRegion: "Families, Schools",
-    description: "2 rackets + 3 shuttles + carry bag. Ideal for beginners.",
-    isActive: true,
-    shareCount: BigInt(167),
-    createdAt: BigInt(0),
-  },
-  // PC / Gaming
-  {
-    id: BigInt(1039),
+    id: BigInt(1012),
     title: "Redgear A-15 RGB Gaming Mouse",
     imageUrl:
       "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=400&fit=crop",
@@ -621,86 +240,53 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1040),
-    title: "Cosmic Byte GS430 Gaming Headset",
+    id: BigInt(1013),
+    title: "Mamaearth Ubtan Face Wash 100ml",
     imageUrl:
-      "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop",
-    price: BigInt(1299),
-    affiliateLink: "https://amzn.to/cosmicbyte",
-    commissionPercent: BigInt(16),
-    trendingTag: "🎮 Gaming",
-    targetRegion: "PC, Console Gamers",
-    description: "7.1 surround, retractable mic, LED lighting.",
-    isActive: true,
-    shareCount: BigInt(312),
-    createdAt: BigInt(0),
-  },
-  // Appliances
-  {
-    id: BigInt(1041),
-    title: "Havells Instanio 3L Instant Water Heater",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    price: BigInt(2999),
-    affiliateLink: "https://amzn.to/havellsheater",
-    commissionPercent: BigInt(10),
-    trendingTag: "🚿 Home",
-    targetRegion: "North India",
-    description: "3 litre, 3kW instant heating, 5 star BEE rating.",
-    isActive: true,
-    shareCount: BigInt(189),
-    createdAt: BigInt(0),
-  },
-  {
-    id: BigInt(1042),
-    title: "Crompton Optimus 3L Table Fan",
-    imageUrl:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-    price: BigInt(1499),
-    affiliateLink: "https://amzn.to/cromptonoptimus",
-    commissionPercent: BigInt(12),
-    trendingTag: "🌬️ Summer",
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
+    price: BigInt(249),
+    affiliateLink: "https://amzn.to/mamaearthfacewash",
+    commissionPercent: BigInt(18),
+    trendingTag: "🌿 Natural",
     targetRegion: "Pan India",
-    description: "High speed, 3-blade, 3 speed settings, 1 year warranty.",
+    description: "Turmeric + Saffron, skin brightening, natural formula.",
     isActive: true,
-    shareCount: BigInt(145),
+    shareCount: BigInt(298),
     createdAt: BigInt(0),
   },
-  // Bags & Luggage
   {
-    id: BigInt(1043),
-    title: "American Tourister Trolley Bag 55cm (Cabin)",
+    id: BigInt(1014),
+    title: "Wildcraft Laptop Backpack 30L",
     imageUrl:
-      "https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&h=400&fit=crop",
-    price: BigInt(3999),
-    affiliateLink: "https://amzn.to/americantourister",
-    commissionPercent: BigInt(12),
-    trendingTag: "✈️ Travel",
-    targetRegion: "Frequent Flyers",
-    description: "4-wheel spinner, TSA lock, expandable, lightweight.",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
+    price: BigInt(1799),
+    affiliateLink: "https://amzn.to/wildcraftbag",
+    commissionPercent: BigInt(16),
+    trendingTag: "🎒 College",
+    targetRegion: "Students",
+    description: "Water resistant, padded laptop sleeve, USB charging port.",
+    isActive: true,
+    shareCount: BigInt(198),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(1015),
+    title: "Wipro 9W LED Smart Bulb (Pack of 2)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400&h=400&fit=crop",
+    price: BigInt(799),
+    affiliateLink: "https://amzn.to/wipledo",
+    commissionPercent: BigInt(20),
+    trendingTag: "💡 Smart Home",
+    targetRegion: "Urban Homes",
+    description: "16 million colours, Alexa & Google Home compatible.",
     isActive: true,
     shareCount: BigInt(234),
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1044),
-    title: "Safari Polycarbonate 26 inch Check-in Luggage",
-    imageUrl:
-      "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=400&fit=crop",
-    price: BigInt(5999),
-    affiliateLink: "https://amzn.to/safariluggage",
-    commissionPercent: BigInt(10),
-    trendingTag: "✈️ Travel",
-    targetRegion: "Travel Enthusiasts",
-    description: "Hard case, 8-wheel 360°, combination lock, 5 year warranty.",
-    isActive: true,
-    shareCount: BigInt(178),
-    createdAt: BigInt(0),
-  },
-  // Pharma / Health
-  {
-    id: BigInt(1045),
-    title: "Neuherbs True Whey Protein 1kg (Chocolate)",
+    id: BigInt(1016),
+    title: "Neuherbs True Whey Protein 1kg",
     imageUrl:
       "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=400&fit=crop",
     price: BigInt(1499),
@@ -714,261 +300,563 @@ const SAMPLE_DEALS: Deal[] = [
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1046),
-    title: "Dr. Morepen Glucometer BG-03 + 50 Strips",
+    id: BigInt(1017),
+    title: "American Tourister Trolley Bag 55cm",
     imageUrl:
-      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop",
-    price: BigInt(599),
-    affiliateLink: "https://amzn.to/drmorepen",
-    commissionPercent: BigInt(15),
-    trendingTag: "🏥 Health",
-    targetRegion: "Diabetics, Families",
-    description: "Fast 5-second reading, memory 300 results, no coding.",
+      "https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&h=400&fit=crop",
+    price: BigInt(3999),
+    affiliateLink: "https://amzn.to/americantourister",
+    commissionPercent: BigInt(12),
+    trendingTag: "✈️ Travel",
+    targetRegion: "Frequent Flyers",
+    description: "4-wheel spinner, TSA lock, expandable, lightweight.",
     isActive: true,
     shareCount: BigInt(234),
     createdAt: BigInt(0),
   },
-  // Pet Supplies
   {
-    id: BigInt(1047),
-    title: "Pedigree Adult Dog Food Chicken & Vegetables 3kg",
+    id: BigInt(1018),
+    title: "Cosmic Byte GS430 Gaming Headset",
     imageUrl:
-      "https://images.unsplash.com/photo-1601758123927-196f8c8a3a0b?w=400&h=400&fit=crop",
-    price: BigInt(699),
-    affiliateLink: "https://amzn.to/pedigreedogfood",
-    commissionPercent: BigInt(10),
-    trendingTag: "🐕 Pets",
-    targetRegion: "Pet Owners",
-    description: "Complete nutrition, omega 6 fatty acids, dental care.",
+      "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop",
+    price: BigInt(1299),
+    affiliateLink: "https://amzn.to/cosmicbyte",
+    commissionPercent: BigInt(16),
+    trendingTag: "🎮 Gaming",
+    targetRegion: "PC, Console Gamers",
+    description: "7.1 surround, retractable mic, LED lighting.",
     isActive: true,
-    shareCount: BigInt(167),
+    shareCount: BigInt(312),
     createdAt: BigInt(0),
   },
-  // Toys & Games
   {
-    id: BigInt(1048),
-    title: "Funskool Monopoly Classic Board Game",
+    id: BigInt(1019),
+    title: "Pigeon Healthifry Digital Air Fryer 4.2L",
     imageUrl:
-      "https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=400&h=400&fit=crop",
-    price: BigInt(799),
-    affiliateLink: "https://amzn.to/monopoly",
-    commissionPercent: BigInt(15),
-    trendingTag: "🎲 Family Game",
-    targetRegion: "Families",
-    description: "Classic property trading game, 2-8 players, ages 8+.",
-    isActive: true,
-    shareCount: BigInt(289),
-    createdAt: BigInt(0),
-  },
-  // Musical Instruments
-  {
-    id: BigInt(1049),
-    title: "Kadence Beginner Acoustic Guitar (Natural)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1648146894073-0c9b0d52a3b4?w=400&h=400&fit=crop",
     price: BigInt(3499),
-    affiliateLink: "https://amzn.to/kadenceguitar",
-    commissionPercent: BigInt(12),
-    trendingTag: "🎸 Music",
-    targetRegion: "Students, Beginners",
-    description: "Linden wood top, rosewood fingerboard, 3-month warranty.",
+    affiliateLink: "https://amzn.to/pigeonairfryer",
+    commissionPercent: BigInt(14),
+    trendingTag: "🥗 Healthy",
+    targetRegion: "Metro Cities",
+    description: "360° air circulation, 8 preset menus, non-stick basket.",
+    isActive: true,
+    shareCount: BigInt(267),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(1020),
+    title: "GoPro HERO11 Black Action Camera",
+    imageUrl:
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop",
+    price: BigInt(34990),
+    affiliateLink: "https://amzn.to/gopro11",
+    commissionPercent: BigInt(5),
+    trendingTag: "📸 Adventure",
+    targetRegion: "Travellers, Vloggers",
+    description: "5.3K60, 27MP, HyperSmooth 5.0, waterproof to 10m.",
     isActive: true,
     shareCount: BigInt(145),
     createdAt: BigInt(0),
   },
-  // Automotive
+
+  // ── FLIPKART products ──────────────────────────────────────────────────────
   {
-    id: BigInt(1050),
-    title: "Voxpop Universal Car Phone Mount (Dashboard)",
+    id: BigInt(2001),
+    title: "Realme Narzo 70 Pro 5G",
+    imageUrl:
+      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
+    price: BigInt(18999),
+    affiliateLink: "https://fkrt.it/realme-narzo70",
+    commissionPercent: BigInt(6),
+    trendingTag: "📱 Flipkart Exclusive",
+    targetRegion: "Pan India",
+    description: "5G, 50MP OIS camera, MediaTek Dimensity 7050.",
+    isActive: true,
+    shareCount: BigInt(312),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2002),
+    title: "OnePlus Nord CE 4 Lite 5G",
+    imageUrl:
+      "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&h=400&fit=crop",
+    price: BigInt(17499),
+    affiliateLink: "https://fkrt.it/oneplus-nord-ce4",
+    commissionPercent: BigInt(5),
+    trendingTag: "📱 Flipkart 5G",
+    targetRegion: "Pan India",
+    description: "5G, 50MP camera, 5500mAh battery, 80W charging.",
+    isActive: true,
+    shareCount: BigInt(278),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2003),
+    title: "Boat Rockerz 450 Bluetooth Headphones",
+    imageUrl:
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+    price: BigInt(899),
+    affiliateLink: "https://fkrt.it/boat-rockerz450",
+    commissionPercent: BigInt(10),
+    trendingTag: "🎧 Flipkart Deal",
+    targetRegion: "Youth",
+    description: "15hr playtime, 40mm drivers, padded earcups.",
+    isActive: true,
+    shareCount: BigInt(189),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2004),
+    title: "Redmi Note 13 5G (Flipkart)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=400&h=400&fit=crop",
+    price: BigInt(16999),
+    affiliateLink: "https://fkrt.it/redmi-note13",
+    commissionPercent: BigInt(5),
+    trendingTag: "📱 Flipkart Sale",
+    targetRegion: "Pan India",
+    description: "5G, 108MP camera, 5000mAh, 33W fast charge.",
+    isActive: true,
+    shareCount: BigInt(423),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2005),
+    title: "Allen Solly Men Formal Shirt",
+    imageUrl:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+    price: BigInt(799),
+    affiliateLink: "https://fkrt.it/allensolly-shirt",
+    commissionPercent: BigInt(18),
+    trendingTag: "👔 Flipkart Fashion",
+    targetRegion: "Working Professionals",
+    description: "Slim fit, premium cotton, easy iron fabric.",
+    isActive: true,
+    shareCount: BigInt(167),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2006),
+    title: "Fastrack Analog Watch",
+    imageUrl:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+    price: BigInt(1295),
+    affiliateLink: "https://fkrt.it/fastrack-watch",
+    commissionPercent: BigInt(15),
+    trendingTag: "⌚ Flipkart Watch",
+    targetRegion: "Youth",
+    description: "Stainless steel case, leather strap, water resistant.",
+    isActive: true,
+    shareCount: BigInt(234),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2007),
+    title: "Pigeon Electric Kettle 1.5L",
+    imageUrl:
+      "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop",
+    price: BigInt(699),
+    affiliateLink: "https://fkrt.it/pigeon-kettle",
+    commissionPercent: BigInt(16),
+    trendingTag: "🍳 Flipkart Kitchen",
+    targetRegion: "Pan India",
+    description: "1500W, auto shut-off, cool touch body, 1.5L capacity.",
+    isActive: true,
+    shareCount: BigInt(312),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2008),
+    title: "Noise ColorFit Pro 4 GPS Watch",
+    imageUrl:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+    price: BigInt(3999),
+    affiliateLink: "https://fkrt.it/noise-colorfit-pro4",
+    commissionPercent: BigInt(8),
+    trendingTag: "⌚ Flipkart GPS",
+    targetRegion: "Pan India",
+    description: "GPS tracking, AMOLED, Bluetooth calling, 7-day battery.",
+    isActive: true,
+    shareCount: BigInt(198),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2009),
+    title: "Mi 43 inch 4K Smart TV",
+    imageUrl:
+      "https://images.unsplash.com/photo-1593359677879-a4bb92f829e1?w=400&h=400&fit=crop",
+    price: BigInt(32999),
+    affiliateLink: "https://fkrt.it/mi-43inch-4k",
+    commissionPercent: BigInt(4),
+    trendingTag: "📺 Flipkart TV",
+    targetRegion: "Families",
+    description: "4K UHD, Android TV, Dolby Audio, 20W speakers.",
+    isActive: true,
+    shareCount: BigInt(145),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(2010),
+    title: "Puma Men Running Shoes",
+    imageUrl:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
+    price: BigInt(2499),
+    affiliateLink: "https://fkrt.it/puma-running",
+    commissionPercent: BigInt(20),
+    trendingTag: "👟 Flipkart Sports",
+    targetRegion: "Pan India",
+    description: "Lightweight EVA sole, mesh upper, breathable design.",
+    isActive: true,
+    shareCount: BigInt(289),
+    createdAt: BigInt(0),
+  },
+
+  // ── ALIEXPRESS / ALIBABA products ─────────────────────────────────────────
+  {
+    id: BigInt(3001),
+    title: "LED Strip Lights 5M RGB Waterproof",
+    imageUrl:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
+    price: BigInt(299),
+    affiliateLink: "https://s.click.aliexpress.com/led-strip",
+    commissionPercent: BigInt(25),
+    trendingTag: "💡 Alibaba Wholesale",
+    targetRegion: "Pan India",
+    description: "5M RGB LEDs, remote control, music sync, waterproof IP65.",
+    isActive: true,
+    shareCount: BigInt(567),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3002),
+    title: "Portable Mini USB Fan (Desk Fan)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
+    price: BigInt(199),
+    affiliateLink: "https://s.click.aliexpress.com/mini-fan",
+    commissionPercent: BigInt(30),
+    trendingTag: "🌬️ AliExpress Best",
+    targetRegion: "Office Workers",
+    description: "USB powered, 3 speed settings, ultra-quiet motor, portable.",
+    isActive: true,
+    shareCount: BigInt(423),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3003),
+    title: "Tempered Glass Screen Protector (Pack of 10)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=400&h=400&fit=crop",
+    price: BigInt(149),
+    affiliateLink: "https://s.click.aliexpress.com/screen-protector",
+    commissionPercent: BigInt(35),
+    trendingTag: "📱 AliExpress Bulk",
+    targetRegion: "Resellers",
+    description: "9H hardness, oleophobic coating, bubble-free, universal fit.",
+    isActive: true,
+    shareCount: BigInt(345),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3004),
+    title: "Smart Watch DT7 Ultra (Calling)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+    price: BigInt(799),
+    affiliateLink: "https://s.click.aliexpress.com/dt7-ultra",
+    commissionPercent: BigInt(22),
+    trendingTag: "⌚ AliExpress Smart",
+    targetRegion: "Pan India",
+    description: "2.05 inch HD screen, Bluetooth calling, health monitoring.",
+    isActive: true,
+    shareCount: BigInt(412),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3005),
+    title: "Wireless Earbuds i12 TWS (Budget)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
+    price: BigInt(349),
+    affiliateLink: "https://s.click.aliexpress.com/i12-tws",
+    commissionPercent: BigInt(28),
+    trendingTag: "🎧 AliExpress Value",
+    targetRegion: "Pan India",
+    description: "Touch control, 5.0 Bluetooth, 3hr playtime + 12hr case.",
+    isActive: true,
+    shareCount: BigInt(289),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3006),
+    title: "Electric Toothbrush Sonic (Waterproof)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop",
+    price: BigInt(499),
+    affiliateLink: "https://s.click.aliexpress.com/sonic-toothbrush",
+    commissionPercent: BigInt(25),
+    trendingTag: "🦷 AliExpress Health",
+    targetRegion: "Pan India",
+    description:
+      "40,000 vibrations/min, 5 modes, USB charging, 1 month battery.",
+    isActive: true,
+    shareCount: BigInt(234),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(3007),
+    title: "Magnetic Phone Holder (Car Dashboard)",
     imageUrl:
       "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop",
-    price: BigInt(449),
-    affiliateLink: "https://amzn.to/voxpopcarmont",
-    commissionPercent: BigInt(25),
-    trendingTag: "🚗 Car",
+    price: BigInt(299),
+    affiliateLink: "https://s.click.aliexpress.com/magnetic-holder",
+    commissionPercent: BigInt(30),
+    trendingTag: "🚗 AliExpress Car",
     targetRegion: "Car Owners",
-    description: "360° rotation, strong suction, compatible all phones.",
+    description: "360° rotation, strong magnet, dashboard + vent mount.",
     isActive: true,
     shareCount: BigInt(378),
     createdAt: BigInt(0),
   },
   {
-    id: BigInt(1051),
-    title: "3M Car Tinting Window Film (Black)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=400&fit=crop",
-    price: BigInt(2499),
-    affiliateLink: "https://amzn.to/3mcartint",
-    commissionPercent: BigInt(10),
-    trendingTag: "🚗 Car Accessories",
-    targetRegion: "Car Owners",
-    description: "Heat rejection 79%, UV protection 99%, 5 year warranty.",
-    isActive: true,
-    shareCount: BigInt(134),
-    createdAt: BigInt(0),
-  },
-  // Lighting
-  {
-    id: BigInt(1052),
-    title: "Syska 20W LED Panel Light (Pack of 2)",
+    id: BigInt(3008),
+    title: "Solar Garden Lights (Pack of 4)",
     imageUrl:
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    price: BigInt(699),
-    affiliateLink: "https://amzn.to/syskaled",
+    price: BigInt(399),
+    affiliateLink: "https://s.click.aliexpress.com/solar-lights",
     commissionPercent: BigInt(22),
-    trendingTag: "💡 LED",
-    targetRegion: "Homes, Offices",
-    description: "Cool white 6500K, 1600lm, 3 year warranty, flicker free.",
-    isActive: true,
-    shareCount: BigInt(198),
-    createdAt: BigInt(0),
-  },
-  // Networking
-  {
-    id: BigInt(1053),
-    title: "TP-Link Archer C6 AC1200 Dual-Band Wi-Fi Router",
-    imageUrl:
-      "https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=400&h=400&fit=crop",
-    price: BigInt(2499),
-    affiliateLink: "https://amzn.to/tplinkrouter",
-    commissionPercent: BigInt(10),
-    trendingTag: "📶 Internet",
-    targetRegion: "Home, WFH",
-    description: "1200 Mbps, MU-MIMO, beamforming, 4 antennas.",
-    isActive: true,
-    shareCount: BigInt(267),
-    createdAt: BigInt(0),
-  },
-  // Mattress
-  {
-    id: BigInt(1054),
-    title: "Sleepwell Ortho Pro 4 inch Foam Mattress (Queen)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=400&fit=crop",
-    price: BigInt(12999),
-    affiliateLink: "https://amzn.to/sleepwell",
-    commissionPercent: BigInt(8),
-    trendingTag: "😴 Sleep",
-    targetRegion: "Families",
-    description: "High-density foam, ortho support, 5 year warranty.",
+    trendingTag: "☀️ AliExpress Green",
+    targetRegion: "Garden Lovers",
+    description: "Auto on/off, 8hr illumination, IP65 waterproof, 4 pack.",
     isActive: true,
     shareCount: BigInt(156),
     createdAt: BigInt(0),
   },
-  // Detergent / Cleaning
   {
-    id: BigInt(1055),
-    title: "Surf Excel Matic Liquid Detergent 2L",
+    id: BigInt(3009),
+    title: "Stainless Steel Water Bottle 1L (Vacuum)",
     imageUrl:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    price: BigInt(399),
-    affiliateLink: "https://amzn.to/surfexcel",
-    commissionPercent: BigInt(8),
-    trendingTag: "🧺 Household",
+      "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&h=400&fit=crop",
+    price: BigInt(249),
+    affiliateLink: "https://s.click.aliexpress.com/vacuum-bottle",
+    commissionPercent: BigInt(30),
+    trendingTag: "🥤 AliExpress Eco",
     targetRegion: "Pan India",
-    description: "Front load formula, deep clean, stain removal.",
-    isActive: true,
-    shareCount: BigInt(112),
-    createdAt: BigInt(0),
-  },
-  // Tools
-  {
-    id: BigInt(1056),
-    title: "Bosch GSB 500W Electric Drill Machine",
-    imageUrl:
-      "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&h=400&fit=crop",
-    price: BigInt(1999),
-    affiliateLink: "https://amzn.to/boschdrillmachine",
-    commissionPercent: BigInt(12),
-    trendingTag: "🔧 Tools",
-    targetRegion: "Men 25-50",
-    description: "500W, 2800RPM, 13mm chuck, 2 speed settings.",
+    description: "24hr cold, 12hr hot, leak-proof lid, food grade steel.",
     isActive: true,
     shareCount: BigInt(189),
     createdAt: BigInt(0),
   },
-  // Art Supplies
   {
-    id: BigInt(1057),
-    title: "Camlin 12 Shade Watercolour Cake Set",
+    id: BigInt(3010),
+    title: "Phone Case Bulk Pack (50 Mixed Cases)",
     imageUrl:
-      "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&h=400&fit=crop",
-    price: BigInt(349),
-    affiliateLink: "https://amzn.to/camlinwatercolor",
-    commissionPercent: BigInt(20),
-    trendingTag: "🎨 Art",
-    targetRegion: "Students, Artists",
-    description: "Vivid colours, portable kit with brush, beginner friendly.",
-    isActive: true,
-    shareCount: BigInt(145),
-    createdAt: BigInt(0),
-  },
-  // Footwear
-  {
-    id: BigInt(1058),
-    title: "Bata Men Formal Leather Shoes (Black)",
-    imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=400&h=400&fit=crop",
     price: BigInt(1999),
-    affiliateLink: "https://amzn.to/bataformals",
-    commissionPercent: BigInt(14),
-    trendingTag: "👞 Formal",
-    targetRegion: "Working Men",
-    description: "Genuine leather upper, cushioned insole, anti-slip sole.",
+    affiliateLink: "https://s.click.aliexpress.com/phone-case-bulk",
+    commissionPercent: BigInt(20),
+    trendingTag: "📦 Alibaba Resell",
+    targetRegion: "Resellers, Shops",
+    description:
+      "50 mixed phone cases — silicone, hard back, transparent. Resell for ₹80-150 each!",
     isActive: true,
     shareCount: BigInt(234),
     createdAt: BigInt(0),
   },
-  // Sunglasses
+
+  // ── FIVERR services ────────────────────────────────────────────────────────
   {
-    id: BigInt(1059),
-    title: "Vincent Chase UV400 Polarized Sunglasses",
+    id: BigInt(4001),
+    title: "Professional Logo Design",
     imageUrl:
-      "https://images.unsplash.com/photo-1508296695146-257a814070b4?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=400&fit=crop",
     price: BigInt(999),
-    affiliateLink: "https://amzn.to/vcsunglasses",
-    commissionPercent: BigInt(22),
-    trendingTag: "😎 Fashion",
-    targetRegion: "Youth",
-    description: "UV400, polarized lens, lightweight TR90 frame.",
+    affiliateLink: "https://www.fiverr.com/gigs/logo-design",
+    commissionPercent: BigInt(15),
+    trendingTag: "🎨 Fiverr Gig",
+    targetRegion: "Business Owners",
+    description:
+      "Custom logo with 3 concepts, unlimited revisions, all file formats.",
+    isActive: true,
+    shareCount: BigInt(456),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4002),
+    title: "WordPress Website Development",
+    imageUrl:
+      "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=400&fit=crop",
+    price: BigInt(4999),
+    affiliateLink: "https://www.fiverr.com/gigs/wordpress-website",
+    commissionPercent: BigInt(12),
+    trendingTag: "💻 Fiverr Dev",
+    targetRegion: "Businesses",
+    description:
+      "5-page professional website, mobile responsive, SEO optimized.",
+    isActive: true,
+    shareCount: BigInt(234),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4003),
+    title: "Social Media Marketing Posts (10 posts)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&h=400&fit=crop",
+    price: BigInt(1499),
+    affiliateLink: "https://www.fiverr.com/gigs/social-media-posts",
+    commissionPercent: BigInt(14),
+    trendingTag: "📱 Fiverr Social",
+    targetRegion: "Brands, Startups",
+    description:
+      "10 branded posts for Instagram/Facebook, custom graphics, captions.",
+    isActive: true,
+    shareCount: BigInt(189),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4004),
+    title: "SEO Optimization Complete Package",
+    imageUrl:
+      "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=400&h=400&fit=crop",
+    price: BigInt(2999),
+    affiliateLink: "https://www.fiverr.com/gigs/seo-optimization",
+    commissionPercent: BigInt(12),
+    trendingTag: "🔍 Fiverr SEO",
+    targetRegion: "Website Owners",
+    description: "On-page + off-page SEO, 20 backlinks, monthly report.",
+    isActive: true,
+    shareCount: BigInt(145),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4005),
+    title: "YouTube Video Editing (Professional)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1536240478700-b869ad10e2d1?w=400&h=400&fit=crop",
+    price: BigInt(1299),
+    affiliateLink: "https://www.fiverr.com/gigs/youtube-editing",
+    commissionPercent: BigInt(15),
+    trendingTag: "🎬 Fiverr Video",
+    targetRegion: "YouTubers",
+    description:
+      "10-min video edit, color grading, subtitles, intro/outro, thumbnail.",
+    isActive: true,
+    shareCount: BigInt(312),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4006),
+    title: "Hindi Article Writing (1000 words)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&h=400&fit=crop",
+    price: BigInt(349),
+    affiliateLink: "https://www.fiverr.com/gigs/hindi-writing",
+    commissionPercent: BigInt(20),
+    trendingTag: "✍️ Fiverr Hindi",
+    targetRegion: "Hindi Bloggers",
+    description:
+      "SEO-friendly Hindi article, research included, plagiarism free.",
     isActive: true,
     shareCount: BigInt(178),
     createdAt: BigInt(0),
   },
-  // Digital Vouchers
   {
-    id: BigInt(1060),
-    title: "Amazon Pay Gift Card ₹500 (Instant Email)",
+    id: BigInt(4007),
+    title: "Business Card Design (Premium)",
     imageUrl:
-      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop",
-    price: BigInt(500),
-    affiliateLink: "https://amzn.to/amazonpaygiftcard",
-    commissionPercent: BigInt(3),
-    trendingTag: "🎁 Gift Card",
-    targetRegion: "Pan India",
-    description: "Instant delivery on email, never expires, use anywhere.",
+      "https://images.unsplash.com/photo-1578926288207-a90a5366e9bf?w=400&h=400&fit=crop",
+    price: BigInt(599),
+    affiliateLink: "https://www.fiverr.com/gigs/business-card",
+    commissionPercent: BigInt(18),
+    trendingTag: "🎨 Fiverr Design",
+    targetRegion: "Business Owners",
+    description: "Front + back design, print-ready files, 2 concepts.",
     isActive: true,
-    shareCount: BigInt(456),
+    shareCount: BigInt(234),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4008),
+    title: "Voice Over Recording (Hindi)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=400&h=400&fit=crop",
+    price: BigInt(799),
+    affiliateLink: "https://www.fiverr.com/gigs/hindi-voiceover",
+    commissionPercent: BigInt(16),
+    trendingTag: "🎙️ Fiverr Voice",
+    targetRegion: "Advertisers",
+    description:
+      "Professional Hindi voice over, studio quality, 24hr delivery.",
+    isActive: true,
+    shareCount: BigInt(145),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4009),
+    title: "Data Entry Services (1000 rows)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop",
+    price: BigInt(499),
+    affiliateLink: "https://www.fiverr.com/gigs/data-entry",
+    commissionPercent: BigInt(18),
+    trendingTag: "📊 Fiverr Data",
+    targetRegion: "Businesses",
+    description: "Accurate data entry, Excel/Google Sheets, 99.9% accuracy.",
+    isActive: true,
+    shareCount: BigInt(267),
+    createdAt: BigInt(0),
+  },
+  {
+    id: BigInt(4010),
+    title: "Virtual Assistant (10 Hours/Week)",
+    imageUrl:
+      "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=400&fit=crop",
+    price: BigInt(1999),
+    affiliateLink: "https://www.fiverr.com/gigs/virtual-assistant",
+    commissionPercent: BigInt(12),
+    trendingTag: "💼 Fiverr VA",
+    targetRegion: "Entrepreneurs",
+    description:
+      "Email management, scheduling, research, social media — 10hrs/week.",
+    isActive: true,
+    shareCount: BigInt(198),
     createdAt: BigInt(0),
   },
 ];
 
 const FILTERS = [
   "All",
+  "Amazon",
+  "Flipkart",
+  "AliExpress",
+  "Fiverr",
   "Electronics",
   "Fashion",
   "Kitchen",
   "Fitness",
-  "Books",
   "Home",
   "Gaming",
   "Beauty",
-  "Travel",
 ] as const;
 type Filter = (typeof FILTERS)[number];
 
 const FILTER_KEYWORDS: Record<Filter, string[]> = {
   All: [],
+  Amazon: ["amzn.to"],
+  Flipkart: ["fkrt.it", "flipkart"],
+  AliExpress: ["aliexpress", "s.click.ali", "alibaba", "wholesale", "bulk"],
+  Fiverr: [
+    "fiverr.com",
+    "gig",
+    "freelance",
+    "design",
+    "development",
+    "writing",
+    "voice",
+    "va",
+  ],
   Electronics: [
     "earbuds",
     "headphones",
@@ -981,6 +869,8 @@ const FILTER_KEYWORDS: Record<Filter, string[]> = {
     "smart bulb",
     "charger",
     "power bank",
+    "fan",
+    "tv",
   ],
   Fashion: [
     "shoes",
@@ -990,15 +880,24 @@ const FILTER_KEYWORDS: Record<Filter, string[]> = {
     "luggage",
     "sunglasses",
     "formal",
-    "sneakers",
+    "shirt",
+    "watch",
   ],
   Kitchen: ["mixer", "grinder", "kettle", "air fryer", "cooker"],
-  Fitness: ["resistance", "yoga", "skipping", "protein", "gym", "sports"],
-  Books: ["book", "habits", "rich dad"],
-  Home: ["pillow", "storage", "fan", "heater", "mattress", "detergent", "led"],
+  Fitness: ["resistance", "yoga", "skipping", "protein", "gym", "running"],
+  Home: [
+    "pillow",
+    "storage",
+    "fan",
+    "heater",
+    "mattress",
+    "detergent",
+    "led",
+    "solar",
+    "bulb",
+  ],
   Gaming: ["gaming", "mouse", "headset"],
-  Beauty: ["toner", "face wash", "hair dryer", "mamaearth"],
-  Travel: ["trolley", "luggage", "car", "mount"],
+  Beauty: ["toner", "face wash", "hair dryer", "mamaearth", "toothbrush"],
 };
 
 function formatINR(val: bigint | number) {
@@ -1008,6 +907,8 @@ function formatINR(val: bigint | number) {
 function DealCard({ deal, index }: { deal: Deal; index: number }) {
   const trackShare = useTrackShare();
   const [imgError, setImgError] = useState(false);
+
+  const platform = getPlatform(deal);
 
   const handleShare = async () => {
     try {
@@ -1023,11 +924,20 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
     window.open(whatsappUrl, "_blank");
   };
 
-  const handleBuy = () => {
-    if (deal.affiliateLink && deal.affiliateLink.trim() !== "") {
-      window.open(deal.affiliateLink, "_blank");
-    } else {
-      window.open("https://www.amazon.in", "_blank");
+  const handleBuy = async () => {
+    const targetUrl =
+      deal.affiliateLink && deal.affiliateLink.trim() !== ""
+        ? deal.affiliateLink
+        : "https://www.amazon.in";
+    window.open(targetUrl, "_blank");
+
+    try {
+      await trackShare.mutateAsync(deal.id);
+      toast.success("Deal khul gayi! Commission track ho raha hai 📊", {
+        duration: 2000,
+      });
+    } catch {
+      // Don't fail the buy flow if tracking fails
     }
   };
 
@@ -1073,7 +983,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           </div>
         )}
 
-        {/* Commission badge */}
+        {/* Commission badge (top-right) */}
         <div
           className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold"
           style={{
@@ -1086,7 +996,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           {Number(deal.commissionPercent)}%
         </div>
 
-        {/* Trending tag */}
+        {/* Trending tag (top-left) */}
         {deal.trendingTag && (
           <div
             className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-0.5"
@@ -1099,6 +1009,18 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
             {deal.trendingTag}
           </div>
         )}
+
+        {/* Platform badge (bottom-left) */}
+        <div
+          className="absolute bottom-2 left-2 rounded-full px-2 py-0.5 text-[9px] font-bold"
+          style={{
+            background: platform.bg,
+            color: platform.color,
+            boxShadow: "0 1px 4px oklch(0 0 0 / 0.4)",
+          }}
+        >
+          {platform.name}
+        </div>
       </div>
 
       {/* Content */}
@@ -1214,6 +1136,7 @@ export default function DealsPage() {
       const titleLower = deal.title.toLowerCase();
       const descLower = deal.description.toLowerCase();
       const tagLower = deal.trendingTag.toLowerCase();
+      const linkLower = deal.affiliateLink.toLowerCase();
 
       const matchesSearch =
         !search ||
@@ -1228,13 +1151,22 @@ export default function DealsPage() {
           (kw) =>
             titleLower.includes(kw) ||
             descLower.includes(kw) ||
-            tagLower.includes(kw),
+            tagLower.includes(kw) ||
+            linkLower.includes(kw),
         );
       }
 
       return matchesSearch && matchesFilter;
     });
   }, [allDeals, search, activeFilter]);
+
+  // Platform color map for filter badges
+  const platformColors: Record<string, string> = {
+    Amazon: "oklch(0.72 0.18 65)",
+    Flipkart: "oklch(0.45 0.22 250)",
+    AliExpress: "oklch(0.55 0.24 25)",
+    Fiverr: "oklch(0.45 0.22 145)",
+  };
 
   return (
     <div className="min-h-screen">
@@ -1291,31 +1223,37 @@ export default function DealsPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-2 overflow-x-auto pb-0.5 mt-2.5 no-scrollbar">
-          {FILTERS.map((filter) => (
-            <button
-              type="button"
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              data-ocid="deals.filter.tab"
-              className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background:
-                  activeFilter === filter
-                    ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
+          {FILTERS.map((filter) => {
+            const isPlatform = filter in platformColors;
+            const platformColor = platformColors[filter];
+            const isActive = activeFilter === filter;
+            return (
+              <button
+                type="button"
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                data-ocid="deals.filter.tab"
+                className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                style={{
+                  background: isActive
+                    ? isPlatform
+                      ? platformColor
+                      : "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
                     : "oklch(0.14 0.01 85)",
-                color:
-                  activeFilter === filter
-                    ? "oklch(0.08 0 0)"
+                  color: isActive
+                    ? isPlatform && filter !== "Amazon"
+                      ? "oklch(0.96 0.01 0)"
+                      : "oklch(0.08 0 0)"
                     : "oklch(0.62 0.01 85)",
-                border:
-                  activeFilter === filter
-                    ? "1px solid oklch(0.78 0.12 85 / 0.5)"
+                  border: isActive
+                    ? `1px solid ${isPlatform ? platformColor : "oklch(0.78 0.12 85 / 0.5)"}`
                     : "1px solid oklch(0.22 0.01 85)",
-              }}
-            >
-              {filter}
-            </button>
-          ))}
+                }}
+              >
+                {filter}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -1333,7 +1271,103 @@ export default function DealsPage() {
           </div>
         ) : (
           <>
-            {/* Info banner */}
+            {/* Earn Kaise Karen info card */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl p-3 mb-3"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.6), oklch(0.16 0.06 85 / 0.4))",
+                border: "1px solid oklch(0.78 0.12 85 / 0.3)",
+              }}
+            >
+              <p
+                className="text-xs font-bold mb-2"
+                style={{ color: "oklch(0.86 0.14 85)" }}
+              >
+                💡 Earn Kaise Karen?
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    icon: "🛒",
+                    label: "Buy Karo",
+                    desc: "Link pe jao, khareedari karo → commission milegi",
+                  },
+                  {
+                    icon: "📢",
+                    label: "Share Karo",
+                    desc: "Deal share karo, koi bhi khareedeta hai → aapko commission",
+                  },
+                  {
+                    icon: "💰",
+                    label: "Admin 2%",
+                    desc: "Platform maintain karne ke liye 2% admin ko",
+                  },
+                ].map(({ icon, label, desc }) => (
+                  <div key={label} className="text-center">
+                    <div className="text-lg mb-0.5">{icon}</div>
+                    <p
+                      className="text-[10px] font-semibold"
+                      style={{ color: "oklch(0.82 0.08 85)" }}
+                    >
+                      {label}
+                    </p>
+                    <p
+                      className="text-[9px] mt-0.5 leading-tight"
+                      style={{ color: "oklch(0.52 0.01 85)" }}
+                    >
+                      {desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Platform legend */}
+            <div className="flex gap-1.5 flex-wrap mb-3">
+              {(
+                [
+                  {
+                    name: "Amazon",
+                    bg: "oklch(0.72 0.18 65)",
+                    color: "oklch(0.08 0 0)",
+                  },
+                  {
+                    name: "Flipkart",
+                    bg: "oklch(0.45 0.22 250)",
+                    color: "oklch(0.96 0.01 250)",
+                  },
+                  {
+                    name: "AliExpress",
+                    bg: "oklch(0.55 0.24 25)",
+                    color: "oklch(0.96 0.01 25)",
+                  },
+                  {
+                    name: "Fiverr",
+                    bg: "oklch(0.45 0.22 145)",
+                    color: "oklch(0.96 0.02 145)",
+                  },
+                ] as const
+              ).map((p) => (
+                <span
+                  key={p.name}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
+                  style={{ background: p.bg, color: p.color }}
+                >
+                  {p.name}
+                </span>
+              ))}
+              <span
+                className="text-[9px]"
+                style={{ color: "oklch(0.45 0.01 85)", alignSelf: "center" }}
+              >
+                — Platform badges dikhte hain har deal par
+              </span>
+            </div>
+
+            {/* Info banner for sample mode */}
             {isSampleMode && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
@@ -1346,8 +1380,8 @@ export default function DealsPage() {
               >
                 <span className="text-sm">📦</span>
                 <p className="text-xs" style={{ color: "oklch(0.72 0.10 85)" }}>
-                  {allDeals.length} Sample Deals — Admin real affiliate deals
-                  add kar sakta hai.
+                  {allDeals.length} Sample Deals (Amazon, Flipkart, AliExpress,
+                  Fiverr) — Admin real affiliate deals add kar sakta hai.
                 </p>
               </motion.div>
             )}

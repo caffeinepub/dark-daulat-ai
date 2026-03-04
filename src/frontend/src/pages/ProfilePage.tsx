@@ -137,20 +137,19 @@ export default function ProfilePage() {
               Profile
             </h1>
           </div>
-          {user?.isAdmin && (
-            <a
-              href="/admin"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
-                color: "oklch(0.08 0 0)",
-              }}
-            >
-              <Settings size={12} />
-              Admin
-            </a>
-          )}
+          <a
+            href="/admin"
+            data-ocid="profile.admin_panel_link"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+              color: "oklch(0.08 0 0)",
+            }}
+          >
+            <Settings size={12} />
+            Admin Panel
+          </a>
         </div>
       </header>
 
@@ -263,65 +262,113 @@ export default function ProfilePage() {
             className="rounded-2xl p-4"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.15 0.01 85))",
-              border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+                "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.6), oklch(0.18 0.06 85 / 0.4))",
+              border: "1px solid oklch(0.78 0.12 85 / 0.35)",
+              boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.10)",
             }}
           >
             <h3
-              className="font-bold text-base mb-3"
+              className="font-bold text-base mb-1"
               style={{ color: "oklch(0.86 0.14 85)" }}
             >
               🎁 Aapka Referral Code
             </h3>
+            <p
+              className="text-xs mb-3"
+              style={{ color: "oklch(0.62 0.01 85)" }}
+            >
+              Dosto ko share karo, har purchase par 5% lifetime bonus pao!
+            </p>
 
+            {/* Short code display */}
             <div
-              className="rounded-xl p-3 flex items-center justify-between gap-3 mb-3"
+              className="rounded-xl p-3 flex items-center justify-between gap-3 mb-2"
+              style={{
+                background: "oklch(0.08 0 0)",
+                border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[10px] mb-0.5"
+                  style={{ color: "oklch(0.52 0.01 85)" }}
+                >
+                  Referral Code
+                </p>
+                <span
+                  className="text-base font-bold font-mono tracking-wider block truncate"
+                  style={{ color: "oklch(0.86 0.14 85)" }}
+                >
+                  {user.referralCode.length > 16
+                    ? `${user.referralCode.slice(0, 12)}...`
+                    : user.referralCode}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyReferral}
+                data-ocid="profile.copy_button"
+                className="p-2 rounded-lg shrink-0 transition-colors"
+                style={{
+                  background: "oklch(0.78 0.12 85 / 0.15)",
+                  border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+                }}
+                title="Copy referral link"
+              >
+                <Copy size={15} style={{ color: "oklch(0.86 0.14 85)" }} />
+              </button>
+            </div>
+
+            {/* Full link preview */}
+            <div
+              className="rounded-lg px-3 py-2 mb-3 flex items-center gap-2"
               style={{
                 background: "oklch(0.10 0 0)",
                 border: "1px solid oklch(0.28 0.04 85 / 0.4)",
               }}
             >
               <span
-                className="text-xl font-bold font-mono tracking-widest"
-                style={{ color: "oklch(0.86 0.14 85)" }}
+                className="text-[10px] shrink-0"
+                style={{ color: "oklch(0.52 0.01 85)" }}
               >
-                {user.referralCode}
+                Link:
+              </span>
+              <span
+                className="text-[10px] font-mono truncate flex-1"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                {`${window.location.origin}/login?ref=${user.referralCode.slice(0, 12)}...`}
               </span>
               <button
                 type="button"
                 onClick={handleCopyReferral}
-                data-ocid="profile.copy_button"
-                className="p-2 rounded-lg transition-colors"
+                data-ocid="profile.copy_link_button"
+                className="text-[10px] shrink-0 font-semibold px-2 py-0.5 rounded-md"
                 style={{
                   background: "oklch(0.78 0.12 85 / 0.15)",
+                  color: "oklch(0.86 0.14 85)",
                   border: "1px solid oklch(0.78 0.12 85 / 0.3)",
                 }}
               >
-                <Copy size={15} style={{ color: "oklch(0.86 0.14 85)" }} />
+                Copy
               </button>
             </div>
 
             <button
               type="button"
               onClick={handleShareReferral}
-              className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold"
+              data-ocid="profile.share_button"
+              className="w-full h-11 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold"
               style={{
                 background:
                   "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
                 color: "oklch(0.08 0 0)",
-                boxShadow: "0 3px 12px oklch(0.78 0.12 85 / 0.3)",
+                boxShadow: "0 3px 16px oklch(0.78 0.12 85 / 0.35)",
               }}
             >
-              <Share2 size={15} />
+              <Share2 size={16} />
               WhatsApp pe Share Karo
             </button>
-
-            <p
-              className="text-xs mt-2 text-center"
-              style={{ color: "oklch(0.45 0.01 85)" }}
-            >
-              Refer karo aur 5% lifetime bonus pao 🎁
-            </p>
           </motion.div>
         )}
 
