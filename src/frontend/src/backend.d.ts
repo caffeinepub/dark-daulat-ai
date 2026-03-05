@@ -74,6 +74,15 @@ export interface AdminStats {
     totalDeals: bigint;
     totalApprovedWithdrawals: bigint;
 }
+export interface KycRecord {
+    status: KycStatus;
+    docNumber: string;
+    userId: Principal;
+    rejectionReason?: string;
+    submittedAt: Time;
+    reviewedAt?: Time;
+    docType: KycDocType;
+}
 export interface AffiliateAccountStats {
     validAccounts: bigint;
     unverifiedAccounts: bigint;
@@ -115,6 +124,10 @@ export interface TransactionStatusSummary {
     totalTransactions: bigint;
     rejectedCount: bigint;
 }
+export enum KycDocType {
+    pan = "pan",
+    aadhaar = "aadhaar"
+}
 export enum MessageRole {
     user = "user",
     assistant = "assistant"
@@ -141,12 +154,14 @@ export interface backendInterface {
     addMessage(message: string): Promise<void>;
     addOrUpdateAffiliateAccount(details: PersistentPersistentAffiliateAccountDetails): Promise<void>;
     adjustWalletBalance(userId: Principal, amount: bigint): Promise<void>;
+    approveKyc(userId: Principal): Promise<void>;
     approveWithdrawal(transactionId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     calculateProfit(productPrice: bigint, commissionPercent: bigint): Promise<ProfitCalculation>;
     clearMessages(): Promise<void>;
     creditCommission(userId: Principal, amount: bigint, note: string): Promise<void>;
     deleteDeal(id: bigint): Promise<void>;
+    generateOtp(email: string, mobile: string): Promise<string>;
     getActiveDeals(): Promise<Array<Deal>>;
     getAdminCommissionSummary(adminName: string): Promise<AdminCommissionSummary | null>;
     getAdminStats(): Promise<AdminStats>;
@@ -155,24 +170,29 @@ export interface backendInterface {
     getAllAdminAffiliateSettings(): Promise<Array<PersistentAdminAffiliateSettings>>;
     getAllAffiliateAccounts(): Promise<Array<PersistentPersistentAffiliateAccountDetails>>;
     getAllDeals(): Promise<Array<Deal>>;
+    getAllKyc(): Promise<Array<KycRecord>>;
     getAllTransactions(): Promise<Array<Transaction>>;
     getAllUsers(): Promise<Array<User>>;
     getCallerUserRole(): Promise<UserRole>;
     getLeaderboard(): Promise<Array<LeaderboardEntry>>;
     getMessages(): Promise<Array<Message>>;
+    getMyKyc(): Promise<KycRecord | null>;
     getTransactionStatusSummary(summaryId: string): Promise<TransactionStatusSummary | null>;
     getTransactions(): Promise<Array<Transaction>>;
     getUser(): Promise<User | null>;
     isCallerAdmin(): Promise<boolean>;
     register(name: string, email: string, mobile: string, referralCode: string | null): Promise<void>;
+    rejectKyc(userId: Principal, reason: string): Promise<void>;
     rejectWithdrawal(transactionId: bigint): Promise<void>;
     requestWithdrawal(amount: bigint): Promise<bigint>;
     saveAdminAffiliateSettings(settings: PersistentAdminAffiliateSettings): Promise<bigint>;
     setAdmin(user: Principal): Promise<void>;
+    submitKyc(docType: KycDocType, docNumber: string): Promise<void>;
     trackShare(dealId: bigint): Promise<void>;
     updateAdminCommissionSummary(adminName: string, adminTotal: bigint): Promise<void>;
     updateAffiliateAccountStats(statsId: string, totalAccounts: bigint, verifiedAccounts: bigint, unverifiedAccounts: bigint, activeAccounts: bigint, inactiveAccounts: bigint, validAccounts: bigint, expiredAccounts: bigint): Promise<void>;
     updateDeal(id: bigint, title: string, imageUrl: string, price: bigint, affiliateLink: string, commissionPercent: bigint, trendingTag: string, targetRegion: string, description: string): Promise<void>;
     updateTransactionStatusSummary(summaryId: string, totalTransactions: bigint, pendingCount: bigint, approvedCount: bigint, rejectedCount: bigint): Promise<void>;
     updateUser(name: string): Promise<void>;
+    verifyOtp(email: string, mobile: string, code: string): Promise<boolean>;
 }

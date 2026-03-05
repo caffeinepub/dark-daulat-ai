@@ -7,9 +7,9 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
+import Migration "migration";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
 (with migration = Migration.run)
 actor {
@@ -190,6 +190,82 @@ actor {
 
   public type Message = PersistentMessage;
   let messages = Map.empty<Principal, [PersistentMessage]>();
+
+  // KYC Verfication
+  public type KycDocType = {
+    #aadhaar;
+    #pan;
+  };
+
+  public type KycStatus = {
+    #pending;
+    #approved;
+    #rejected;
+  };
+
+  public type KycRecord = {
+    userId : Principal;
+    docType : KycDocType;
+    docNumber : Text;
+    status : KycStatus;
+    rejectionReason : ?Text;
+    submittedAt : Time.Time;
+    reviewedAt : ?Time.Time;
+  };
+
+  public type PersistentKyc = KycRecord;
+  let kycStore = Map.empty<Principal, PersistentKyc>();
+
+  // OTP verification
+  public type OtpRecord = {
+    code : Text;
+    email : Text;
+    mobile : Text;
+    expiresAt : Time.Time;
+    used : Bool;
+  };
+
+  public type PersistentOtp = OtpRecord;
+  let otpStore = Map.empty<Principal, PersistentOtp>();
+
+  // OTP Functions
+  public shared ({ caller }) func generateOtp(email : Text, mobile : Text) : async Text {
+    let seed = (Time.now() / 1_000_000) % 1_000_000;
+    let code = (if (seed < 100_000) { 100_000 + seed } else { seed }).toText();
+
+    let internalOtp : PersistentOtp = {
+      code = code;
+      email;
+      mobile;
+      expiresAt = Time.now() + 10 * 60 * 1_000_000_000;
+      used = false;
+    };
+    otpStore.add(caller, internalOtp);
+
+    code;
+  };
+
+  public shared ({ caller }) func verifyOtp(email : Text, mobile : Text, code : Text) : async Bool {
+    switch (otpStore.get(caller)) {
+      case (null) { false };
+      case (?otp) {
+        if (otp.used or Time.now() > otp.expiresAt) {
+          false;
+        } else if (
+          otp.email == email and otp.mobile == mobile and otp.code == code
+        ) {
+          let updatedOtp : PersistentOtp = {
+            otp with used = true
+          };
+          otpStore.add(caller, updatedOtp);
+
+          true;
+        } else {
+          false;
+        };
+      };
+    };
+  };
 
   // User Functions
   public shared ({ caller }) func register(name : Text, email : Text, mobile : Text, referralCode : ?Text) : async () {
@@ -426,11 +502,11 @@ actor {
     };
   };
 
-  public query func getActiveDeals() : async [Deal] {
+  public query ({ caller }) func getActiveDeals() : async [Deal] {
     deals.values().toArray().filter<Deal>(func(d) { d.isActive });
   };
 
-  public query func getAllDeals() : async [Deal] {
+  public query ({ caller }) func getAllDeals() : async [Deal] {
     deals.values().toArray();
   };
 
@@ -496,6 +572,16 @@ actor {
   public shared ({ caller }) func requestWithdrawal(amount : Nat) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can request withdrawals");
+    };
+
+    // Check KYC
+    switch (kycStore.get(caller)) {
+      case (null) { Runtime.trap("KYC complete karna zaroori hai withdrawal se pehle") };
+      case (?kyc) {
+        if (kyc.status != #approved) {
+          Runtime.trap("KYC approved hona zaroori hai withdrawal ke liye");
+        };
+      };
     };
 
     if (amount < 200) {
@@ -955,6 +1041,98 @@ actor {
         nextTransactionId += 1;
       };
       case (null) { Runtime.trap("User not found") };
+    };
+  };
+
+  // KYC functions
+  public shared ({ caller }) func submitKyc(docType : KycDocType, docNumber : Text) : async () {
+    // Only users allowed to submit KYC
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can submit KYC");
+    };
+
+    // Validate document number
+    switch (docType) {
+      case (#aadhaar) {
+        if (docNumber.size() != 12) {
+          Runtime.trap("Aadhaar number must be 12 digits");
+        };
+      };
+      case (#pan) {
+        if (docNumber.size() != 10) {
+          Runtime.trap("PAN number must be 10 characters");
+        };
+      };
+    };
+
+    // Check for existing approved KYC
+    switch (kycStore.get(caller)) {
+      case (?existing) {
+        if (existing.status == #approved) {
+          Runtime.trap("KYC already approved hai");
+        };
+      };
+      case (null) {};
+    };
+
+    // Create new KYC record
+    let newKyc : PersistentKyc = {
+      docType;
+      docNumber;
+      status = #pending;
+      userId = caller;
+      rejectionReason = null;
+      submittedAt = Time.now();
+      reviewedAt = null;
+    };
+    kycStore.add(caller, newKyc);
+  };
+
+  // Anyone can get their own KYC
+  public query ({ caller }) func getMyKyc() : async ?KycRecord {
+    kycStore.get(caller);
+  };
+
+  public query ({ caller }) func getAllKyc() : async [KycRecord] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all KYC");
+    };
+    kycStore.values().toArray();
+  };
+
+  public shared ({ caller }) func approveKyc(userId : Principal) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can approve KYC");
+    };
+
+    switch (kycStore.get(userId)) {
+      case (?kyc) {
+        let updatedKyc : PersistentKyc = {
+          kyc with status = #approved;
+          reviewedAt = ?Time.now();
+          rejectionReason = null;
+        };
+        kycStore.add(userId, updatedKyc);
+      };
+      case (null) { Runtime.trap("KYC record not found") };
+    };
+  };
+
+  public shared ({ caller }) func rejectKyc(userId : Principal, reason : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can reject KYC");
+    };
+
+    switch (kycStore.get(userId)) {
+      case (?kyc) {
+        let updatedKyc : PersistentKyc = {
+          kyc with status = #rejected;
+          rejectionReason = ?reason;
+          reviewedAt = ?Time.now();
+        };
+        kycStore.add(userId, updatedKyc);
+      };
+      case (null) { Runtime.trap("KYC record not found") };
     };
   };
 };

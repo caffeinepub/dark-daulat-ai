@@ -1,0 +1,51 @@
+{
+  "name": "Dark Daulat AI",
+  "short_name": "Dark Daulat",
+  "description": "AI-Powered Earning App - Kamayi ka Smart Zariya",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#FFD700",
+  "lang": "hi",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/generated/dark-daulat-icon.dim_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/generated/dark-daulat-splash.dim_1080x1920.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["finance", "shopping", "business"],
+  "shortcuts": [
+    {
+      "name": "Deals Dekho",
+      "short_name": "Deals",
+      "description": "AI Deals page kholein",
+      "url": "/deals",
+      "icons": [{ "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Wallet",
+      "short_name": "Wallet",
+      "description": "Apni kamayi dekho",
+      "url": "/wallet",
+      "icons": [{ "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

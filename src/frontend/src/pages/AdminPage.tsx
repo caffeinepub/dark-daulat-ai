@@ -26,14 +26,17 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Deal, Transaction, User } from "../backend.d";
+import type { Deal, KycRecord, Transaction, User } from "../backend.d";
+import { KycDocType } from "../backend.d";
 import {
   TransactionStatus as TxStatus,
   TransactionType as TxType,
 } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  KycStatus,
   useAddDeal,
+  useApproveKyc,
   useApproveWithdrawal,
   useCreditCommission,
   useDeleteDeal,
@@ -41,9 +44,11 @@ import {
   useGetAffiliateAccount,
   useGetAllAdminAffiliateSettings,
   useGetAllDeals,
+  useGetAllKyc,
   useGetAllTransactions,
   useGetAllUsers,
   useGetUser,
+  useRejectKyc,
   useRejectWithdrawal,
   useSaveAdminAffiliateSettings,
   useSaveAffiliateAccount,
@@ -1684,6 +1689,326 @@ function AffiliateTab() {
   );
 }
 
+// ─── KYC Tab ─────────────────────────────────────────────────────────────────
+function KycTab() {
+  const { data: kycList = [], isLoading } = useGetAllKyc();
+  const approveKyc = useApproveKyc();
+  const rejectKyc = useRejectKyc();
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const total = kycList.length;
+  const pending = kycList.filter((k) => {
+    const s = k.status as unknown as string;
+    return s === KycStatus.pending || s === "pending";
+  }).length;
+  const approved = kycList.filter((k) => {
+    const s = k.status as unknown as string;
+    return s === KycStatus.approved || s === "approved";
+  }).length;
+  const rejected = kycList.filter((k) => {
+    const s = k.status as unknown as string;
+    return s === KycStatus.rejected || s === "rejected";
+  }).length;
+
+  const maskDocNumber = (doc: string) =>
+    doc.length > 4 ? `****${doc.slice(-4)}` : doc;
+
+  const formatDate = (ts: bigint) => {
+    const ms = Number(ts / 1_000_000n);
+    return new Date(ms).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const getStatusStyle = (status: unknown) => {
+    const s = status as string;
+    if (s === "approved")
+      return {
+        bg: "oklch(0.70 0.18 140 / 0.15)",
+        border: "oklch(0.70 0.18 140 / 0.4)",
+        color: "oklch(0.75 0.18 140)",
+      };
+    if (s === "rejected")
+      return {
+        bg: "oklch(0.62 0.22 25 / 0.15)",
+        border: "oklch(0.62 0.22 25 / 0.4)",
+        color: "oklch(0.68 0.22 25)",
+      };
+    return {
+      bg: "oklch(0.75 0.15 80 / 0.15)",
+      border: "oklch(0.75 0.15 80 / 0.4)",
+      color: "oklch(0.85 0.15 80)",
+    };
+  };
+
+  const handleApprove = async (kyc: KycRecord) => {
+    try {
+      await approveKyc.mutateAsync(kyc.userId);
+      toast.success("KYC Approved!");
+    } catch {
+      toast.error("Approve fail hua");
+    }
+  };
+
+  const handleReject = async (kyc: KycRecord) => {
+    if (!rejectReason.trim()) {
+      toast.error("Rejection reason daalo");
+      return;
+    }
+    try {
+      await rejectKyc.mutateAsync({
+        userId: kyc.userId,
+        reason: rejectReason.trim(),
+      });
+      toast.success("KYC Rejected");
+      setRejectingId(null);
+      setRejectReason("");
+    } catch {
+      toast.error("Reject fail hua");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Summary stats */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "Total", value: total, color: "oklch(0.82 0.05 85)" },
+          { label: "Pending", value: pending, color: "oklch(0.85 0.15 80)" },
+          { label: "Approved", value: approved, color: "oklch(0.75 0.18 140)" },
+          { label: "Rejected", value: rejected, color: "oklch(0.68 0.22 25)" },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-xl p-3 text-center"
+            style={{
+              background: "oklch(0.12 0 0)",
+              border: "1px solid oklch(0.22 0.01 85)",
+            }}
+          >
+            <p className="text-lg font-bold" style={{ color: stat.color }}>
+              {stat.value}
+            </p>
+            <p className="text-[10px]" style={{ color: "oklch(0.45 0.01 85)" }}>
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* KYC List */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+            <div key={i} className="animate-shimmer h-20 rounded-xl" />
+          ))}
+        </div>
+      ) : kycList.length === 0 ? (
+        <div
+          data-ocid="admin.kyc_empty_state"
+          className="rounded-xl p-6 text-center"
+          style={{
+            background: "oklch(0.12 0 0)",
+            border: "1px solid oklch(0.22 0.01 85)",
+          }}
+        >
+          <p className="text-sm" style={{ color: "oklch(0.45 0.01 85)" }}>
+            Abhi koi KYC submission nahi hai
+          </p>
+        </div>
+      ) : (
+        <div
+          className="overflow-x-auto rounded-xl"
+          data-ocid="admin.kyc_table"
+          style={{ border: "1px solid oklch(0.22 0.01 85)" }}
+        >
+          <table className="w-full text-xs">
+            <thead>
+              <tr
+                style={{
+                  background: "oklch(0.14 0.005 85)",
+                  borderBottom: "1px solid oklch(0.22 0.01 85)",
+                }}
+              >
+                {["User", "Type", "Number", "Status", "Date", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-2 text-left font-semibold"
+                      style={{ color: "oklch(0.62 0.01 85)" }}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {kycList.map((kyc: KycRecord, idx) => {
+                const kycId = `${kyc.userId.toString()}_${idx}`;
+                const statusStyle = getStatusStyle(kyc.status);
+                const statusStr = kyc.status as unknown as string;
+                const isPending =
+                  statusStr === KycStatus.pending || statusStr === "pending";
+
+                return (
+                  <>
+                    <tr
+                      key={kycId}
+                      style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                    >
+                      <td
+                        className="px-3 py-2.5 font-mono"
+                        style={{ color: "oklch(0.62 0.01 85)" }}
+                      >
+                        {kyc.userId.toString().slice(0, 10)}...
+                      </td>
+                      <td
+                        className="px-3 py-2.5"
+                        style={{ color: "oklch(0.82 0.05 85)" }}
+                      >
+                        {kyc.docType === KycDocType.aadhaar ? "Aadhaar" : "PAN"}
+                      </td>
+                      <td
+                        className="px-3 py-2.5 font-mono"
+                        style={{ color: "oklch(0.62 0.01 85)" }}
+                      >
+                        {maskDocNumber(kyc.docNumber)}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={{
+                            background: statusStyle.bg,
+                            border: `1px solid ${statusStyle.border}`,
+                            color: statusStyle.color,
+                          }}
+                        >
+                          {statusStr}
+                        </span>
+                      </td>
+                      <td
+                        className="px-3 py-2.5"
+                        style={{ color: "oklch(0.52 0.01 85)" }}
+                      >
+                        {formatDate(kyc.submittedAt)}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {isPending && (
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(kyc)}
+                              disabled={approveKyc.isPending}
+                              data-ocid={`admin.kyc_approve_button.${idx + 1}`}
+                              className="p-1.5 rounded-lg"
+                              style={{
+                                background: "oklch(0.70 0.18 140 / 0.15)",
+                                border: "1px solid oklch(0.70 0.18 140 / 0.3)",
+                              }}
+                              title="Approve"
+                            >
+                              <Check
+                                size={11}
+                                style={{ color: "oklch(0.75 0.18 140)" }}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectingId(kycId);
+                                setRejectReason("");
+                              }}
+                              data-ocid={`admin.kyc_reject_button.${idx + 1}`}
+                              className="p-1.5 rounded-lg"
+                              style={{
+                                background: "oklch(0.62 0.22 25 / 0.15)",
+                                border: "1px solid oklch(0.62 0.22 25 / 0.3)",
+                              }}
+                              title="Reject"
+                            >
+                              <X
+                                size={11}
+                                style={{ color: "oklch(0.68 0.22 25)" }}
+                              />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {/* Inline rejection reason input */}
+                    {rejectingId === kycId && (
+                      <tr
+                        key={`${kycId}_reject`}
+                        style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                      >
+                        <td
+                          colSpan={6}
+                          className="px-3 py-2"
+                          style={{ background: "oklch(0.10 0 0 / 0.5)" }}
+                        >
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              placeholder="Rejection reason daalo..."
+                              value={rejectReason}
+                              onChange={(e) => setRejectReason(e.target.value)}
+                              data-ocid="admin.kyc_reject_reason_input"
+                              className="h-8 rounded-lg text-xs flex-1"
+                              style={{
+                                background: "oklch(0.10 0 0)",
+                                border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                                color: "oklch(0.96 0.015 85)",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleReject(kyc)}
+                              disabled={rejectKyc.isPending}
+                              data-ocid="admin.kyc_reject_confirm_button"
+                              className="px-3 h-8 rounded-lg text-[10px] font-bold shrink-0"
+                              style={{
+                                background: "oklch(0.62 0.22 25)",
+                                color: "oklch(0.96 0.01 25)",
+                              }}
+                            >
+                              {rejectKyc.isPending ? (
+                                <Loader2 size={10} className="animate-spin" />
+                              ) : (
+                                "Reject"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setRejectingId(null)}
+                              data-ocid="admin.kyc_reject_cancel_button"
+                              className="px-3 h-8 rounded-lg text-[10px] shrink-0"
+                              style={{
+                                background: "oklch(0.16 0 0)",
+                                border: "1px solid oklch(0.22 0.01 85)",
+                                color: "oklch(0.62 0.01 85)",
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { identity } = useInternetIdentity();
@@ -1857,7 +2182,7 @@ export default function AdminPage() {
       <div className="p-4">
         <Tabs defaultValue="earnings">
           <TabsList
-            className="w-full h-10 grid grid-cols-6 rounded-xl mb-4"
+            className="w-full h-10 grid grid-cols-7 rounded-xl mb-4"
             style={{
               background: "oklch(0.12 0 0)",
               border: "1px solid oklch(0.22 0.01 85)",
@@ -1868,6 +2193,7 @@ export default function AdminPage() {
               { value: "deals", icon: Tag, label: "Deals" },
               { value: "users", icon: Users, label: "Users" },
               { value: "transactions", icon: Receipt, label: "TXNs" },
+              { value: "kyc", icon: ShieldCheck, label: "KYC" },
               { value: "analytics", icon: BarChart3, label: "Stats" },
               { value: "affiliate", icon: Link2, label: "Affl." },
             ].map(({ value, icon: Icon, label }) => (
@@ -1897,6 +2223,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="transactions">
             <TransactionsTab />
+          </TabsContent>
+          <TabsContent value="kyc">
+            <KycTab />
           </TabsContent>
           <TabsContent value="analytics">
             <AnalyticsTab />

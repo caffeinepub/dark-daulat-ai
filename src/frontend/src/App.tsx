@@ -10,12 +10,14 @@ import {
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import BottomNav from "./components/BottomNav";
+import PWAInstallBanner from "./components/PWAInstallBanner";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import AdminPage from "./pages/AdminPage";
 import CalculatorPage from "./pages/CalculatorPage";
 import ChatPage from "./pages/ChatPage";
 import DealsPage from "./pages/DealsPage";
 import HomePage from "./pages/HomePage";
+import KycPage from "./pages/KycPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import SharePage from "./pages/SharePage";
@@ -30,7 +32,7 @@ function LoadingScreen() {
     >
       <div className="flex flex-col items-center gap-3">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 overflow-hidden"
           style={{
             background:
               "linear-gradient(135deg, oklch(0.14 0.03 85), oklch(0.20 0.05 85))",
@@ -38,12 +40,11 @@ function LoadingScreen() {
             boxShadow: "0 0 24px oklch(0.78 0.12 85 / 0.2)",
           }}
         >
-          <span
-            className="text-2xl font-bold"
-            style={{ color: "oklch(0.86 0.14 85)" }}
-          >
-            ₹
-          </span>
+          <img
+            src="/assets/generated/dark-daulat-logo-transparent.dim_512x512.png"
+            className="w-14 h-14 object-contain"
+            alt="Dark Daulat AI Logo"
+          />
         </div>
         <Loader2
           className="animate-spin"
@@ -106,6 +107,7 @@ function AppLayout() {
         <Outlet />
       </main>
       <BottomNav />
+      <PWAInstallBanner />
     </div>
   );
 }
@@ -173,6 +175,12 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
+const kycRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/kyc",
+  component: KycPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appLayoutRoute.addChildren([
@@ -183,6 +191,7 @@ const routeTree = rootRoute.addChildren([
     walletRoute,
     profileRoute,
     chatRoute,
+    kycRoute,
   ]),
   adminRoute,
 ]);

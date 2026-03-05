@@ -8,6 +8,7 @@ import {
   Clock,
   IndianRupee,
   Loader2,
+  Shield,
   Wallet,
   XCircle,
 } from "lucide-react";
@@ -25,6 +26,8 @@ import {
 } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  KycStatus,
+  useGetMyKyc,
   useGetTransactions,
   useGetUser,
   useRequestWithdrawal,
@@ -113,8 +116,14 @@ export default function WalletPage() {
   const { data: user, isLoading: userLoading } = useGetUser();
   const { data: transactions = [], isLoading: txLoading } =
     useGetTransactions();
+  const { data: kyc } = useGetMyKyc();
   const withdrawMutation = useRequestWithdrawal();
   const [withdrawAmount, setWithdrawAmount] = useState("");
+
+  // KYC check
+  const kycStatus = kyc ? (kyc.status as unknown as string) : null;
+  const isKycApproved =
+    kycStatus === KycStatus.approved || kycStatus === "approved";
 
   // Redirect to login if not authenticated (wait for initialization first)
   useEffect(() => {
@@ -274,155 +283,222 @@ export default function WalletPage() {
             </motion.div>
           )}
 
-        {/* Withdrawal Section */}
+        {/* KYC Warning / Withdrawal Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-2xl p-5"
-          style={{
-            background:
-              "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.15 0.01 85))",
-            border: "1px solid oklch(0.28 0.04 85 / 0.4)",
-          }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <ArrowDownCircle
-              size={18}
-              style={{ color: "oklch(0.78 0.12 85)" }}
-            />
-            <h3
-              className="font-bold text-base"
-              style={{ color: "oklch(0.86 0.14 85)" }}
-            >
-              Withdrawal Request
-            </h3>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <Label
-                className="text-xs mb-1.5 block"
-                style={{ color: "oklch(0.62 0.01 85)" }}
-              >
-                Amount (Min ₹200)
-              </Label>
-              <div className="relative">
-                <IndianRupee
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "oklch(0.52 0.01 85)" }}
-                />
-                <Input
-                  type="number"
-                  placeholder="Kitna withdraw karna hai?"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  data-ocid="wallet.withdrawal_input"
-                  min="200"
-                  className="pl-9 h-11 rounded-xl text-sm"
-                  style={{
-                    background: "oklch(0.10 0 0)",
-                    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
-                    color: "oklch(0.96 0.015 85)",
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && handleWithdraw()}
-                />
-              </div>
-            </div>
-
-            {/* Quick amounts */}
-            <div className="flex gap-2">
-              {[200, 500, 1000, 2000].map((amt) => (
-                <button
-                  type="button"
-                  key={amt}
-                  onClick={() => setWithdrawAmount(String(amt))}
-                  className="flex-1 py-1.5 rounded-lg text-xs font-medium"
-                  style={{
-                    background: "oklch(0.12 0 0)",
-                    border: "1px solid oklch(0.22 0.01 85)",
-                    color: "oklch(0.62 0.01 85)",
-                  }}
-                >
-                  ₹{amt}
-                </button>
-              ))}
-            </div>
-
-            {/* 2% fee preview */}
-            {isValidAmount && (
-              <div
-                className="rounded-xl p-3 space-y-2"
-                style={{
-                  background: "oklch(0.12 0.005 85)",
-                  border: "1px solid oklch(0.28 0.04 85 / 0.3)",
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-xs"
-                    style={{ color: "oklch(0.52 0.01 85)" }}
-                  >
-                    Platform fee (2%):
-                  </span>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: "oklch(0.68 0.22 25)" }}
-                  >
-                    -₹{formatINR(platformFee)}
-                  </span>
-                </div>
-                <div
-                  className="h-px"
-                  style={{ background: "oklch(0.28 0.04 85 / 0.2)" }}
-                />
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: "oklch(0.82 0.05 85)" }}
-                  >
-                    Aapko milega:
-                  </span>
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: "oklch(0.78 0.18 145)" }}
-                  >
-                    ₹{formatINR(youGetAmount)}
-                  </span>
-                </div>
-                <p
-                  className="text-[10px]"
-                  style={{ color: "oklch(0.42 0.01 85)" }}
-                >
-                  2% platform fee automatically kati jaati hai withdrawal par
-                </p>
-              </div>
-            )}
-
-            <Button
-              onClick={handleWithdraw}
-              disabled={withdrawMutation.isPending}
-              data-ocid="wallet.withdrawal_submit_button"
-              className="w-full h-11 text-sm font-semibold rounded-xl"
+          {!isKycApproved ? (
+            /* KYC Warning */
+            <div
+              data-ocid="wallet.kyc_warning_card"
+              className="rounded-2xl p-5"
               style={{
                 background:
-                  "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
-                color: "oklch(0.08 0 0)",
-                border: "none",
-                boxShadow: "0 4px 16px oklch(0.78 0.12 85 / 0.3)",
+                  "linear-gradient(135deg, oklch(0.13 0.04 85 / 0.7), oklch(0.17 0.06 85 / 0.5))",
+                border: "1px solid oklch(0.78 0.12 85 / 0.45)",
+                boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.1)",
               }}
             >
-              {withdrawMutation.isPending ? (
-                <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
-                  Request bhej raha hai...
-                </>
-              ) : (
-                "Withdrawal Request Karo"
-              )}
-            </Button>
-          </div>
+              <div className="flex items-center gap-3 mb-3">
+                <Shield size={22} style={{ color: "oklch(0.78 0.12 85)" }} />
+                <div>
+                  <h3
+                    className="font-bold text-base"
+                    style={{ color: "oklch(0.86 0.14 85)" }}
+                  >
+                    Withdrawal Ke Liye KYC Zaroori Hai
+                  </h3>
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: "oklch(0.62 0.01 85)" }}
+                  >
+                    Pehle apna KYC verify karo, fir withdrawal karo
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5 mb-4">
+                {[
+                  "📋 Aadhaar Card ya PAN Card se verify karo",
+                  "⏱️ Admin 24-48 ghante mein approve karta hai",
+                  "✅ Ek baar approve hone ke baad lifetime valid",
+                ].map((text) => (
+                  <p
+                    key={text}
+                    className="text-xs"
+                    style={{ color: "oklch(0.58 0.01 85)" }}
+                  >
+                    {text}
+                  </p>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/kyc" })}
+                data-ocid="wallet.kyc_button"
+                className="w-full h-11 rounded-xl text-sm font-bold"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                  color: "oklch(0.08 0 0)",
+                  border: "none",
+                  boxShadow: "0 4px 16px oklch(0.78 0.12 85 / 0.35)",
+                }}
+              >
+                🛡️ KYC Karo → Withdraw Karo
+              </button>
+            </div>
+          ) : (
+            /* Normal Withdrawal Section */
+            <div
+              className="rounded-2xl p-5"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.13 0.005 85), oklch(0.15 0.01 85))",
+                border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <ArrowDownCircle
+                  size={18}
+                  style={{ color: "oklch(0.78 0.12 85)" }}
+                />
+                <h3
+                  className="font-bold text-base"
+                  style={{ color: "oklch(0.86 0.14 85)" }}
+                >
+                  Withdrawal Request
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label
+                    className="text-xs mb-1.5 block"
+                    style={{ color: "oklch(0.62 0.01 85)" }}
+                  >
+                    Amount (Min ₹200)
+                  </Label>
+                  <div className="relative">
+                    <IndianRupee
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2"
+                      style={{ color: "oklch(0.52 0.01 85)" }}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Kitna withdraw karna hai?"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      data-ocid="wallet.withdrawal_input"
+                      min="200"
+                      className="pl-9 h-11 rounded-xl text-sm"
+                      style={{
+                        background: "oklch(0.10 0 0)",
+                        border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                        color: "oklch(0.96 0.015 85)",
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleWithdraw()}
+                    />
+                  </div>
+                </div>
+
+                {/* Quick amounts */}
+                <div className="flex gap-2">
+                  {[200, 500, 1000, 2000].map((amt) => (
+                    <button
+                      type="button"
+                      key={amt}
+                      onClick={() => setWithdrawAmount(String(amt))}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-medium"
+                      style={{
+                        background: "oklch(0.12 0 0)",
+                        border: "1px solid oklch(0.22 0.01 85)",
+                        color: "oklch(0.62 0.01 85)",
+                      }}
+                    >
+                      ₹{amt}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 2% fee preview */}
+                {isValidAmount && (
+                  <div
+                    className="rounded-xl p-3 space-y-2"
+                    style={{
+                      background: "oklch(0.12 0.005 85)",
+                      border: "1px solid oklch(0.28 0.04 85 / 0.3)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-xs"
+                        style={{ color: "oklch(0.52 0.01 85)" }}
+                      >
+                        Platform fee (2%):
+                      </span>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: "oklch(0.68 0.22 25)" }}
+                      >
+                        -₹{formatINR(platformFee)}
+                      </span>
+                    </div>
+                    <div
+                      className="h-px"
+                      style={{ background: "oklch(0.28 0.04 85 / 0.2)" }}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: "oklch(0.82 0.05 85)" }}
+                      >
+                        Aapko milega:
+                      </span>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: "oklch(0.78 0.18 145)" }}
+                      >
+                        ₹{formatINR(youGetAmount)}
+                      </span>
+                    </div>
+                    <p
+                      className="text-[10px]"
+                      style={{ color: "oklch(0.42 0.01 85)" }}
+                    >
+                      2% platform fee automatically kati jaati hai withdrawal
+                      par
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleWithdraw}
+                  disabled={withdrawMutation.isPending}
+                  data-ocid="wallet.withdrawal_submit_button"
+                  className="w-full h-11 text-sm font-semibold rounded-xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                    color: "oklch(0.08 0 0)",
+                    border: "none",
+                    boxShadow: "0 4px 16px oklch(0.78 0.12 85 / 0.3)",
+                  }}
+                >
+                  {withdrawMutation.isPending ? (
+                    <>
+                      <Loader2 size={16} className="mr-2 animate-spin" />
+                      Request bhej raha hai...
+                    </>
+                  ) : (
+                    "Withdrawal Request Karo"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Transaction History */}

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminStats,
   Deal,
+  KycRecord,
   LeaderboardEntry,
   Message,
   PersistentAdminAffiliateSettings,
@@ -11,8 +12,18 @@ import type {
   Transaction,
   User,
 } from "../backend.d";
+import { KycDocType } from "../backend.d";
 import { useActor } from "./useActor";
 import { useInternetIdentity } from "./useInternetIdentity";
+
+// ─── KYC Status Enum (not in backend.d.ts) ──────────────────────────────────
+export enum KycStatus {
+  pending = "pending",
+  approved = "approved",
+  rejected = "rejected",
+}
+
+export { KycDocType };
 
 // ─── User Queries ───────────────────────────────────────────────────────────
 
@@ -538,5 +549,130 @@ export function useSaveAdminAffiliateSettings() {
     },
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: ["adminAffiliateSettings"] }),
+  });
+}
+
+// ─── OTP Mutations ───────────────────────────────────────────────────────────
+
+export function useGenerateOtp() {
+  const { actor } = useActor();
+  return useMutation({
+    mutationFn: async ({
+      email,
+      mobile,
+    }: {
+      email: string;
+      mobile: string;
+    }): Promise<string> => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.generateOtp(email, mobile);
+    },
+  });
+}
+
+export function useVerifyOtp() {
+  const { actor } = useActor();
+  return useMutation({
+    mutationFn: async ({
+      email,
+      mobile,
+      code,
+    }: {
+      email: string;
+      mobile: string;
+      code: string;
+    }): Promise<boolean> => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.verifyOtp(email, mobile, code);
+    },
+  });
+}
+
+// ─── KYC Queries & Mutations ─────────────────────────────────────────────────
+
+export function useGetMyKyc() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<KycRecord | null>({
+    queryKey: ["myKyc", identity?.getPrincipal().toString()],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      if (identity.getPrincipal().isAnonymous()) return null;
+      try {
+        const result = await actor.getMyKyc();
+        if (result === null || result === undefined) return null;
+        if (Array.isArray(result))
+          return result.length > 0 ? (result[0] as KycRecord) : null;
+        return result as KycRecord;
+      } catch {
+        return null;
+      }
+    },
+    enabled:
+      !!actor &&
+      !isFetching &&
+      !!identity &&
+      !identity.getPrincipal().isAnonymous(),
+    staleTime: 0,
+  });
+}
+
+export function useSubmitKyc() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      docType,
+      docNumber,
+    }: {
+      docType: KycDocType;
+      docNumber: string;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.submitKyc(docType, docNumber);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["myKyc"] }),
+  });
+}
+
+export function useGetAllKyc() {
+  const { actor, isFetching } = useActor();
+  return useQuery<KycRecord[]>({
+    queryKey: ["allKyc"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllKyc();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useApproveKyc() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: Principal) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.approveKyc(userId);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["allKyc"] }),
+  });
+}
+
+export function useRejectKyc() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      reason,
+    }: {
+      userId: Principal;
+      reason: string;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.rejectKyc(userId, reason);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["allKyc"] }),
   });
 }

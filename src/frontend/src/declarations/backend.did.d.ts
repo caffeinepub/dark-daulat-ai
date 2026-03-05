@@ -44,6 +44,20 @@ export interface Deal {
   'affiliateLink' : string,
   'price' : bigint,
 }
+export type KycDocType = { 'pan' : null } |
+  { 'aadhaar' : null };
+export interface KycRecord {
+  'status' : KycStatus,
+  'docNumber' : string,
+  'userId' : Principal,
+  'rejectionReason' : [] | [string],
+  'submittedAt' : Time,
+  'reviewedAt' : [] | [Time],
+  'docType' : KycDocType,
+}
+export type KycStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export interface LeaderboardEntry {
   'referralCode' : string,
   'name' : string,
@@ -143,12 +157,14 @@ export interface _SERVICE {
     undefined
   >,
   'adjustWalletBalance' : ActorMethod<[Principal, bigint], undefined>,
+  'approveKyc' : ActorMethod<[Principal], undefined>,
   'approveWithdrawal' : ActorMethod<[bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'calculateProfit' : ActorMethod<[bigint, bigint], ProfitCalculation>,
   'clearMessages' : ActorMethod<[], undefined>,
   'creditCommission' : ActorMethod<[Principal, bigint, string], undefined>,
   'deleteDeal' : ActorMethod<[bigint], undefined>,
+  'generateOtp' : ActorMethod<[string, string], string>,
   'getActiveDeals' : ActorMethod<[], Array<Deal>>,
   'getAdminCommissionSummary' : ActorMethod<
     [string],
@@ -172,11 +188,13 @@ export interface _SERVICE {
     Array<PersistentPersistentAffiliateAccountDetails>
   >,
   'getAllDeals' : ActorMethod<[], Array<Deal>>,
+  'getAllKyc' : ActorMethod<[], Array<KycRecord>>,
   'getAllTransactions' : ActorMethod<[], Array<Transaction>>,
   'getAllUsers' : ActorMethod<[], Array<User>>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getLeaderboard' : ActorMethod<[], Array<LeaderboardEntry>>,
   'getMessages' : ActorMethod<[], Array<Message>>,
+  'getMyKyc' : ActorMethod<[], [] | [KycRecord]>,
   'getTransactionStatusSummary' : ActorMethod<
     [string],
     [] | [TransactionStatusSummary]
@@ -185,6 +203,7 @@ export interface _SERVICE {
   'getUser' : ActorMethod<[], [] | [User]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'register' : ActorMethod<[string, string, string, [] | [string]], undefined>,
+  'rejectKyc' : ActorMethod<[Principal, string], undefined>,
   'rejectWithdrawal' : ActorMethod<[bigint], undefined>,
   'requestWithdrawal' : ActorMethod<[bigint], bigint>,
   'saveAdminAffiliateSettings' : ActorMethod<
@@ -192,6 +211,7 @@ export interface _SERVICE {
     bigint
   >,
   'setAdmin' : ActorMethod<[Principal], undefined>,
+  'submitKyc' : ActorMethod<[KycDocType, string], undefined>,
   'trackShare' : ActorMethod<[bigint], undefined>,
   'updateAdminCommissionSummary' : ActorMethod<[string, bigint], undefined>,
   'updateAffiliateAccountStats' : ActorMethod<
@@ -207,6 +227,7 @@ export interface _SERVICE {
     undefined
   >,
   'updateUser' : ActorMethod<[string], undefined>,
+  'verifyOtp' : ActorMethod<[string, string, string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

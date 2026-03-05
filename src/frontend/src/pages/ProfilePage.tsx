@@ -4,15 +4,19 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
   BanknoteIcon,
+  CheckCircle2,
   ChevronRight,
+  Clock,
   Copy,
   Crown,
   Loader2,
   LogOut,
   Settings,
   Share2,
+  Shield,
   Trophy,
   User,
+  XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -20,8 +24,10 @@ import { toast } from "sonner";
 import type { LeaderboardEntry } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  KycStatus,
   useGetAffiliateAccount,
   useGetLeaderboard,
+  useGetMyKyc,
   useGetUser,
   useSaveAffiliateAccount,
 } from "../hooks/useQueries";
@@ -44,6 +50,7 @@ export default function ProfilePage() {
   const { data: leaderboard = [], isLoading: lbLoading } = useGetLeaderboard();
   const { data: affiliateAccount, isLoading: affiliateLoading } =
     useGetAffiliateAccount();
+  const { data: kyc, isLoading: kycLoading } = useGetMyKyc();
   const saveAffiliateMutation = useSaveAffiliateAccount();
 
   const [upiId, setUpiId] = useState("");
@@ -251,6 +258,188 @@ export default function ProfilePage() {
             </div>
           )}
         </motion.div>
+
+        {/* KYC Status Card */}
+        {!kycLoading &&
+          (() => {
+            const kycStatus = kyc ? (kyc.status as unknown as string) : null;
+            const isApproved =
+              kycStatus === KycStatus.approved || kycStatus === "approved";
+            const isPending =
+              kycStatus === KycStatus.pending || kycStatus === "pending";
+            const isRejected =
+              kycStatus === KycStatus.rejected || kycStatus === "rejected";
+
+            if (isApproved) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
+                  data-ocid="profile.kyc_approved_card"
+                  className="rounded-xl p-4 flex items-center gap-3"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.12 0.03 145), oklch(0.15 0.05 145))",
+                    border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+                  }}
+                >
+                  <CheckCircle2
+                    size={22}
+                    style={{ color: "oklch(0.70 0.18 145)" }}
+                  />
+                  <div className="flex-1">
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "oklch(0.78 0.18 145)" }}
+                    >
+                      KYC Approved ✅
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.58 0.12 145)" }}
+                    >
+                      Ab Aap Withdraw Kar Sakte Ho
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            }
+
+            if (isPending) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
+                  data-ocid="profile.kyc_pending_card"
+                  className="rounded-xl p-4 flex items-center gap-3"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.13 0.04 70), oklch(0.16 0.05 70))",
+                    border: "1px solid oklch(0.65 0.15 75 / 0.4)",
+                  }}
+                >
+                  <Clock size={22} style={{ color: "oklch(0.78 0.15 75)" }} />
+                  <div className="flex-1">
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "oklch(0.82 0.15 75)" }}
+                    >
+                      KYC Review Mein Hai ⏳
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.60 0.12 75)" }}
+                    >
+                      24-48 ghante mein update milega
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            }
+
+            if (isRejected) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
+                  data-ocid="profile.kyc_rejected_card"
+                  className="rounded-xl p-4"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.12 0.04 25), oklch(0.15 0.06 25))",
+                    border: "1px solid oklch(0.62 0.22 25 / 0.4)",
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <XCircle
+                      size={22}
+                      style={{ color: "oklch(0.68 0.22 25)" }}
+                    />
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "oklch(0.72 0.22 25)" }}
+                    >
+                      KYC Rejected ❌
+                    </p>
+                  </div>
+                  {kyc?.rejectionReason && (
+                    <p
+                      className="text-xs mb-3 pl-8"
+                      style={{ color: "oklch(0.58 0.18 25)" }}
+                    >
+                      Reason: {kyc.rejectionReason}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate({ to: "/kyc" })}
+                    data-ocid="profile.kyc_resubmit_button"
+                    className="w-full h-9 rounded-xl text-xs font-semibold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.55 0.20 25), oklch(0.65 0.22 28))",
+                      color: "oklch(0.96 0.01 25)",
+                      border: "none",
+                    }}
+                  >
+                    Dobara Submit Karo
+                  </button>
+                </motion.div>
+              );
+            }
+
+            // No KYC yet
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
+                data-ocid="profile.kyc_required_card"
+                className="rounded-xl p-4"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.13 0.03 85 / 0.7), oklch(0.17 0.05 85 / 0.5))",
+                  border: "1px solid oklch(0.78 0.12 85 / 0.35)",
+                }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <Shield size={20} style={{ color: "oklch(0.78 0.12 85)" }} />
+                  <div>
+                    <p
+                      className="text-sm font-bold"
+                      style={{ color: "oklch(0.86 0.14 85)" }}
+                    >
+                      KYC Zaruri Hai 🛡️
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.52 0.01 85)" }}
+                    >
+                      Withdrawal ke liye KYC complete karo
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/kyc" })}
+                  data-ocid="profile.kyc_complete_button"
+                  className="w-full h-10 rounded-xl text-sm font-semibold"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                    color: "oklch(0.08 0 0)",
+                    border: "none",
+                    boxShadow: "0 3px 12px oklch(0.78 0.12 85 / 0.3)",
+                  }}
+                >
+                  KYC Complete Karo →
+                </button>
+              </motion.div>
+            );
+          })()}
 
         {/* Referral Card */}
         {user && (

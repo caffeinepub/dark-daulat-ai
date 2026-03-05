@@ -156,6 +156,15 @@ export interface AdminStats {
     totalDeals: bigint;
     totalApprovedWithdrawals: bigint;
 }
+export interface KycRecord {
+    status: KycStatus;
+    docNumber: string;
+    userId: Principal;
+    rejectionReason?: string;
+    submittedAt: Time;
+    reviewedAt?: Time;
+    docType: KycDocType;
+}
 export interface AffiliateAccountStats {
     validAccounts: bigint;
     unverifiedAccounts: bigint;
@@ -197,6 +206,10 @@ export interface TransactionStatusSummary {
     totalTransactions: bigint;
     rejectedCount: bigint;
 }
+export enum KycDocType {
+    pan = "pan",
+    aadhaar = "aadhaar"
+}
 export enum MessageRole {
     user = "user",
     assistant = "assistant"
@@ -224,12 +237,14 @@ export interface backendInterface {
     addMessage(message: string): Promise<void>;
     addOrUpdateAffiliateAccount(details: PersistentPersistentAffiliateAccountDetails): Promise<void>;
     adjustWalletBalance(userId: Principal, amount: bigint): Promise<void>;
+    approveKyc(userId: Principal): Promise<void>;
     approveWithdrawal(transactionId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     calculateProfit(productPrice: bigint, commissionPercent: bigint): Promise<ProfitCalculation>;
     clearMessages(): Promise<void>;
     creditCommission(userId: Principal, amount: bigint, note: string): Promise<void>;
     deleteDeal(id: bigint): Promise<void>;
+    generateOtp(email: string, mobile: string): Promise<string>;
     getActiveDeals(): Promise<Array<Deal>>;
     getAdminCommissionSummary(adminName: string): Promise<AdminCommissionSummary | null>;
     getAdminStats(): Promise<AdminStats>;
@@ -238,28 +253,33 @@ export interface backendInterface {
     getAllAdminAffiliateSettings(): Promise<Array<PersistentAdminAffiliateSettings>>;
     getAllAffiliateAccounts(): Promise<Array<PersistentPersistentAffiliateAccountDetails>>;
     getAllDeals(): Promise<Array<Deal>>;
+    getAllKyc(): Promise<Array<KycRecord>>;
     getAllTransactions(): Promise<Array<Transaction>>;
     getAllUsers(): Promise<Array<User>>;
     getCallerUserRole(): Promise<UserRole>;
     getLeaderboard(): Promise<Array<LeaderboardEntry>>;
     getMessages(): Promise<Array<Message>>;
+    getMyKyc(): Promise<KycRecord | null>;
     getTransactionStatusSummary(summaryId: string): Promise<TransactionStatusSummary | null>;
     getTransactions(): Promise<Array<Transaction>>;
     getUser(): Promise<User | null>;
     isCallerAdmin(): Promise<boolean>;
     register(name: string, email: string, mobile: string, referralCode: string | null): Promise<void>;
+    rejectKyc(userId: Principal, reason: string): Promise<void>;
     rejectWithdrawal(transactionId: bigint): Promise<void>;
     requestWithdrawal(amount: bigint): Promise<bigint>;
     saveAdminAffiliateSettings(settings: PersistentAdminAffiliateSettings): Promise<bigint>;
     setAdmin(user: Principal): Promise<void>;
+    submitKyc(docType: KycDocType, docNumber: string): Promise<void>;
     trackShare(dealId: bigint): Promise<void>;
     updateAdminCommissionSummary(adminName: string, adminTotal: bigint): Promise<void>;
     updateAffiliateAccountStats(statsId: string, totalAccounts: bigint, verifiedAccounts: bigint, unverifiedAccounts: bigint, activeAccounts: bigint, inactiveAccounts: bigint, validAccounts: bigint, expiredAccounts: bigint): Promise<void>;
     updateDeal(id: bigint, title: string, imageUrl: string, price: bigint, affiliateLink: string, commissionPercent: bigint, trendingTag: string, targetRegion: string, description: string): Promise<void>;
     updateTransactionStatusSummary(summaryId: string, totalTransactions: bigint, pendingCount: bigint, approvedCount: bigint, rejectedCount: bigint): Promise<void>;
     updateUser(name: string): Promise<void>;
+    verifyOtp(email: string, mobile: string, code: string): Promise<boolean>;
 }
-import type { AdminCommissionSummary as _AdminCommissionSummary, AffiliateAccountStats as _AffiliateAccountStats, Message as _Message, MessageRole as _MessageRole, PersistentAdminAffiliateSettings as _PersistentAdminAffiliateSettings, PersistentPersistentAffiliateAccountDetails as _PersistentPersistentAffiliateAccountDetails, Time as _Time, Transaction as _Transaction, TransactionStatus as _TransactionStatus, TransactionStatusSummary as _TransactionStatusSummary, TransactionType as _TransactionType, User as _User, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { AdminCommissionSummary as _AdminCommissionSummary, AffiliateAccountStats as _AffiliateAccountStats, KycDocType as _KycDocType, KycRecord as _KycRecord, KycStatus as _KycStatus, Message as _Message, MessageRole as _MessageRole, PersistentAdminAffiliateSettings as _PersistentAdminAffiliateSettings, PersistentPersistentAffiliateAccountDetails as _PersistentPersistentAffiliateAccountDetails, Time as _Time, Transaction as _Transaction, TransactionStatus as _TransactionStatus, TransactionStatusSummary as _TransactionStatusSummary, TransactionType as _TransactionType, User as _User, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -329,6 +349,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.adjustWalletBalance(arg0, arg1);
+            return result;
+        }
+    }
+    async approveKyc(arg0: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.approveKyc(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.approveKyc(arg0);
             return result;
         }
     }
@@ -413,6 +447,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteDeal(arg0);
+            return result;
+        }
+    }
+    async generateOtp(arg0: string, arg1: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateOtp(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateOtp(arg0, arg1);
             return result;
         }
     }
@@ -528,46 +576,60 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getAllTransactions(): Promise<Array<Transaction>> {
+    async getAllKyc(): Promise<Array<KycRecord>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllTransactions();
+                const result = await this.actor.getAllKyc();
                 return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllTransactions();
+            const result = await this.actor.getAllKyc();
             return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getAllUsers(): Promise<Array<User>> {
+    async getAllTransactions(): Promise<Array<Transaction>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllUsers();
+                const result = await this.actor.getAllTransactions();
                 return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllUsers();
+            const result = await this.actor.getAllTransactions();
             return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllUsers(): Promise<Array<User>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllUsers();
+                return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllUsers();
+            return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n27(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n33(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n27(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n33(this._uploadFile, this._downloadFile, result);
         }
     }
     async getLeaderboard(): Promise<Array<LeaderboardEntry>> {
@@ -588,56 +650,70 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getMessages();
-                return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n35(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMessages();
-            return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n35(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getMyKyc(): Promise<KycRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyKyc();
+                return from_candid_opt_n40(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyKyc();
+            return from_candid_opt_n40(this._uploadFile, this._downloadFile, result);
         }
     }
     async getTransactionStatusSummary(arg0: string): Promise<TransactionStatusSummary | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getTransactionStatusSummary(arg0);
-                return from_candid_opt_n34(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n41(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getTransactionStatusSummary(arg0);
-            return from_candid_opt_n34(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n41(this._uploadFile, this._downloadFile, result);
         }
     }
     async getTransactions(): Promise<Array<Transaction>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getTransactions();
-                return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getTransactions();
-            return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUser(): Promise<User | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUser();
-                return from_candid_opt_n35(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n42(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUser();
-            return from_candid_opt_n35(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n42(this._uploadFile, this._downloadFile, result);
         }
     }
     async isCallerAdmin(): Promise<boolean> {
@@ -657,14 +733,28 @@ export class Backend implements backendInterface {
     async register(arg0: string, arg1: string, arg2: string, arg3: string | null): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.register(arg0, arg1, arg2, to_candid_opt_n36(this._uploadFile, this._downloadFile, arg3));
+                const result = await this.actor.register(arg0, arg1, arg2, to_candid_opt_n43(this._uploadFile, this._downloadFile, arg3));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.register(arg0, arg1, arg2, to_candid_opt_n36(this._uploadFile, this._downloadFile, arg3));
+            const result = await this.actor.register(arg0, arg1, arg2, to_candid_opt_n43(this._uploadFile, this._downloadFile, arg3));
+            return result;
+        }
+    }
+    async rejectKyc(arg0: Principal, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.rejectKyc(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.rejectKyc(arg0, arg1);
             return result;
         }
     }
@@ -699,14 +789,14 @@ export class Backend implements backendInterface {
     async saveAdminAffiliateSettings(arg0: PersistentAdminAffiliateSettings): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveAdminAffiliateSettings(to_candid_PersistentAdminAffiliateSettings_n37(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveAdminAffiliateSettings(to_candid_PersistentAdminAffiliateSettings_n44(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveAdminAffiliateSettings(to_candid_PersistentAdminAffiliateSettings_n37(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveAdminAffiliateSettings(to_candid_PersistentAdminAffiliateSettings_n44(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -721,6 +811,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setAdmin(arg0);
+            return result;
+        }
+    }
+    async submitKyc(arg0: KycDocType, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitKyc(to_candid_KycDocType_n46(this._uploadFile, this._downloadFile, arg0), arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitKyc(to_candid_KycDocType_n46(this._uploadFile, this._downloadFile, arg0), arg1);
             return result;
         }
     }
@@ -808,12 +912,35 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async verifyOtp(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyOtp(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyOtp(arg0, arg1, arg2);
+            return result;
+        }
+    }
 }
-function from_candid_MessageRole_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MessageRole): MessageRole {
-    return from_candid_variant_n33(_uploadFile, _downloadFile, value);
+function from_candid_KycDocType_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _KycDocType): KycDocType {
+    return from_candid_variant_n23(_uploadFile, _downloadFile, value);
 }
-function from_candid_Message_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Message): Message {
-    return from_candid_record_n31(_uploadFile, _downloadFile, value);
+function from_candid_KycRecord_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _KycRecord): KycRecord {
+    return from_candid_record_n19(_uploadFile, _downloadFile, value);
+}
+function from_candid_KycStatus_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _KycStatus): KycStatus {
+    return from_candid_variant_n21(_uploadFile, _downloadFile, value);
+}
+function from_candid_MessageRole_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MessageRole): MessageRole {
+    return from_candid_variant_n39(_uploadFile, _downloadFile, value);
+}
+function from_candid_Message_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Message): Message {
+    return from_candid_record_n37(_uploadFile, _downloadFile, value);
 }
 function from_candid_PersistentAdminAffiliateSettings_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PersistentAdminAffiliateSettings): PersistentAdminAffiliateSettings {
     return from_candid_record_n13(_uploadFile, _downloadFile, value);
@@ -821,20 +948,20 @@ function from_candid_PersistentAdminAffiliateSettings_n12(_uploadFile: (file: Ex
 function from_candid_PersistentPersistentAffiliateAccountDetails_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PersistentPersistentAffiliateAccountDetails): PersistentPersistentAffiliateAccountDetails {
     return from_candid_record_n8(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransactionStatus_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransactionStatus): TransactionStatus {
+function from_candid_TransactionStatus_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransactionStatus): TransactionStatus {
     return from_candid_variant_n21(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransactionType_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransactionType): TransactionType {
-    return from_candid_variant_n23(_uploadFile, _downloadFile, value);
+function from_candid_TransactionType_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransactionType): TransactionType {
+    return from_candid_variant_n29(_uploadFile, _downloadFile, value);
 }
-function from_candid_Transaction_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Transaction): Transaction {
-    return from_candid_record_n19(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserRole_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n28(_uploadFile, _downloadFile, value);
-}
-function from_candid_User_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _User): User {
+function from_candid_Transaction_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Transaction): Transaction {
     return from_candid_record_n26(_uploadFile, _downloadFile, value);
+}
+function from_candid_UserRole_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n34(_uploadFile, _downloadFile, value);
+}
+function from_candid_User_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _User): User {
+    return from_candid_record_n32(_uploadFile, _downloadFile, value);
 }
 function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_AffiliateAccountStats]): AffiliateAccountStats | null {
     return value.length === 0 ? null : value[0];
@@ -845,11 +972,14 @@ function from_candid_opt_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Time]): Time | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_TransactionStatusSummary]): TransactionStatusSummary | null {
+function from_candid_opt_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_KycRecord]): KycRecord | null {
+    return value.length === 0 ? null : from_candid_KycRecord_n18(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_TransactionStatusSummary]): TransactionStatusSummary | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_User]): User | null {
-    return value.length === 0 ? null : from_candid_User_n25(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_User]): User | null {
+    return value.length === 0 ? null : from_candid_User_n31(_uploadFile, _downloadFile, value[0]);
 }
 function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_AdminCommissionSummary]): AdminCommissionSummary | null {
     return value.length === 0 ? null : value[0];
@@ -906,6 +1036,33 @@ function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }
 function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    status: _KycStatus;
+    docNumber: string;
+    userId: Principal;
+    rejectionReason: [] | [string];
+    submittedAt: _Time;
+    reviewedAt: [] | [_Time];
+    docType: _KycDocType;
+}): {
+    status: KycStatus;
+    docNumber: string;
+    userId: Principal;
+    rejectionReason?: string;
+    submittedAt: Time;
+    reviewedAt?: Time;
+    docType: KycDocType;
+} {
+    return {
+        status: from_candid_KycStatus_n20(_uploadFile, _downloadFile, value.status),
+        docNumber: value.docNumber,
+        userId: value.userId,
+        rejectionReason: record_opt_to_undefined(from_candid_opt_n9(_uploadFile, _downloadFile, value.rejectionReason)),
+        submittedAt: value.submittedAt,
+        reviewedAt: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.reviewedAt)),
+        docType: from_candid_KycDocType_n22(_uploadFile, _downloadFile, value.docType)
+    };
+}
+function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: bigint;
     status: _TransactionStatus;
     transactionType: _TransactionType;
@@ -924,15 +1081,15 @@ function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         id: value.id,
-        status: from_candid_TransactionStatus_n20(_uploadFile, _downloadFile, value.status),
-        transactionType: from_candid_TransactionType_n22(_uploadFile, _downloadFile, value.transactionType),
+        status: from_candid_TransactionStatus_n27(_uploadFile, _downloadFile, value.status),
+        transactionType: from_candid_TransactionType_n28(_uploadFile, _downloadFile, value.transactionType),
         userId: value.userId,
         note: value.note,
         timestamp: value.timestamp,
         amount: value.amount
     };
 }
-function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     referralCode: string;
     name: string;
     createdAt: _Time;
@@ -974,7 +1131,7 @@ function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uin
         walletBalance: value.walletBalance
     };
 }
-function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     role: _MessageRole;
     message: string;
     timestamp: _Time;
@@ -984,7 +1141,7 @@ function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uin
     timestamp: Time;
 } {
     return {
-        role: from_candid_MessageRole_n32(_uploadFile, _downloadFile, value.role),
+        role: from_candid_MessageRole_n38(_uploadFile, _downloadFile, value.role),
         message: value.message,
         timestamp: value.timestamp
     };
@@ -1035,6 +1192,13 @@ function from_candid_variant_n21(_uploadFile: (file: ExternalBlob) => Promise<Ui
     return "pending" in value ? TransactionStatus.pending : "approved" in value ? TransactionStatus.approved : "rejected" in value ? TransactionStatus.rejected : value;
 }
 function from_candid_variant_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    pan: null;
+} | {
+    aadhaar: null;
+}): KycDocType {
+    return "pan" in value ? KycDocType.pan : "aadhaar" in value ? KycDocType.aadhaar : value;
+}
+function from_candid_variant_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     adjustment: null;
 } | {
     referral: null;
@@ -1047,7 +1211,7 @@ function from_candid_variant_n23(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): TransactionType {
     return "adjustment" in value ? TransactionType.adjustment : "referral" in value ? TransactionType.referral : "commission" in value ? TransactionType.commission : "share" in value ? TransactionType.share : "withdrawal" in value ? TransactionType.withdrawal : value;
 }
-function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -1056,7 +1220,7 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     user: null;
 } | {
     assistant: null;
@@ -1069,17 +1233,23 @@ function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_vec_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_PersistentPersistentAffiliateAccountDetails>): Array<PersistentPersistentAffiliateAccountDetails> {
     return value.map((x)=>from_candid_PersistentPersistentAffiliateAccountDetails_n7(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Transaction>): Array<Transaction> {
-    return value.map((x)=>from_candid_Transaction_n18(_uploadFile, _downloadFile, x));
+function from_candid_vec_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_KycRecord>): Array<KycRecord> {
+    return value.map((x)=>from_candid_KycRecord_n18(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_User>): Array<User> {
-    return value.map((x)=>from_candid_User_n25(_uploadFile, _downloadFile, x));
+function from_candid_vec_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Transaction>): Array<Transaction> {
+    return value.map((x)=>from_candid_Transaction_n25(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Message>): Array<Message> {
-    return value.map((x)=>from_candid_Message_n30(_uploadFile, _downloadFile, x));
+function from_candid_vec_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_User>): Array<User> {
+    return value.map((x)=>from_candid_User_n31(_uploadFile, _downloadFile, x));
 }
-function to_candid_PersistentAdminAffiliateSettings_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: PersistentAdminAffiliateSettings): _PersistentAdminAffiliateSettings {
-    return to_candid_record_n38(_uploadFile, _downloadFile, value);
+function from_candid_vec_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Message>): Array<Message> {
+    return value.map((x)=>from_candid_Message_n36(_uploadFile, _downloadFile, x));
+}
+function to_candid_KycDocType_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: KycDocType): _KycDocType {
+    return to_candid_variant_n47(_uploadFile, _downloadFile, value);
+}
+function to_candid_PersistentAdminAffiliateSettings_n44(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: PersistentAdminAffiliateSettings): _PersistentAdminAffiliateSettings {
+    return to_candid_record_n45(_uploadFile, _downloadFile, value);
 }
 function to_candid_PersistentPersistentAffiliateAccountDetails_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: PersistentPersistentAffiliateAccountDetails): _PersistentPersistentAffiliateAccountDetails {
     return to_candid_record_n2(_uploadFile, _downloadFile, value);
@@ -1087,7 +1257,7 @@ function to_candid_PersistentPersistentAffiliateAccountDetails_n1(_uploadFile: (
 function to_candid_UserRole_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n4(_uploadFile, _downloadFile, value);
 }
-function to_candid_opt_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
+function to_candid_opt_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
     return value === null ? candid_none() : candid_some(value);
 }
 function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -1126,7 +1296,7 @@ function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         verificationStatus: value.verificationStatus ? candid_some(value.verificationStatus) : candid_none()
     };
 }
-function to_candid_record_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n45(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: bigint;
     username?: string;
     websiteUrl: string;
@@ -1184,6 +1354,17 @@ function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         user: null
     } : value == UserRole.guest ? {
         guest: null
+    } : value;
+}
+function to_candid_variant_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: KycDocType): {
+    pan: null;
+} | {
+    aadhaar: null;
+} {
+    return value == KycDocType.pan ? {
+        pan: null
+    } : value == KycDocType.aadhaar ? {
+        aadhaar: null
     } : value;
 }
 export interface CreateActorOptions {

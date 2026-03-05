@@ -1,37 +1,54 @@
 # Dark Daulat AI
 
 ## Current State
-- App has Internet Identity login + registration form (name, email, mobile)
-- Registration consistently fails despite multiple fix attempts
-- Admin panel shows "Access Denied" because admin check logic is broken
-- Profile page shows "Admin Panel" link but admin access fails
-- Deals page has 60 sample Indian products (Amazon-only source, no multi-platform)
-- Platform has full backend: users, deals, transactions, wallet, leaderboard, affiliate accounts
+Full-stack affiliate earning web app with:
+- Internet Identity login
+- User registration (name, email, mobile, referral code)
+- Deals page (60+ products from multiple platforms)
+- Wallet with withdrawal requests
+- Referral system with leaderboard
+- Admin panel (deals, users, withdrawals, affiliate settings)
+- PWA support (manifest, service worker, install banner)
 
 ## Requested Changes (Diff)
 
 ### Add
-- Multi-platform deals: add Flipkart, Alibaba, Fiverr-style products to sample deals (not just Amazon)
-- Each platform clearly labeled with a badge (Amazon, Flipkart, Alibaba, Fiverr)
-- Admin panel: show "E-Commerce Platform" field in deal form so admin can tag which platform a deal is from
-- Deals page: filter tab for each platform (Amazon, Flipkart, Alibaba, Fiverr)
-- Info section explaining how users earn: buy through affiliate link = commission to user + 2% to admin, share = tracking + bonus
+- **OTP Verification**: After filling registration form, a 6-digit OTP is generated and stored on-chain (backend). User must enter OTP to confirm identity before registration completes. OTP has 10-minute expiry. "Resend OTP" option after expiry.
+- **KYC System**: Backend stores KYC submissions (Aadhaar or PAN card number + document type). User must complete KYC before withdrawal is allowed. Admin can approve/reject KYC from Admin Panel. KYC status tracked per user (pending/approved/rejected).
+- **New Logo**: Premium generated logo displayed on Login page, loading screens, and app header.
+- **KYC Page** (`/kyc`): Dedicated page where users can submit Aadhaar (12 digits) or PAN card (10 chars). Shows current KYC status.
+- **Admin KYC Tab**: Admin Panel gets a "KYC" tab to approve/reject pending KYC submissions.
 
 ### Modify
-- **CRITICAL FIX 1 - Registration**: The `useRegister` mutation needs to handle the ICP Candid optional parameter correctly. The `register` function signature is `register(name, email, mobile, referralCode: string | null)`. The backend.d.ts says `string | null` but ICP Candid encodes optional as `[] | [string]`. Current code already does this with `refCodeCandid as any` but it still fails. The real fix: wrap entire mutation in better error handling, add a fallback where if register fails with "already registered" it treats as success and navigates home.
-- **CRITICAL FIX 2 - Admin Panel "Access Denied"**: AdminPage.tsx needs to check `user.isAdmin` properly. The current `useIsAdmin()` hook queries `getUser()` again - this may race with registration. Fix: in AdminPage, use `useGetUser()` directly and check `user?.isAdmin === true`, not `useIsAdmin()`. Also add `isCallerAdmin()` as a fallback.
-- **CRITICAL FIX 3 - Login "already authenticated" loop**: When `login()` is called and user is already authenticated, it throws "User is already authenticated" error. The LoginPage handles this but the flow breaks. Fix: detect this case clearly and skip the popup call entirely, just use existing identity.
-- Deal cards: add clear platform badge (Amazon/Flipkart/Alibaba/Fiverr) on each product image
-- Deals page platform filter tabs
-- AdminPage: add "Platform" dropdown to deal form (Amazon, Flipkart, Alibaba, Fiverr)
+- **Backend `register` function**: Now requires an OTP to be verified before registration completes. Two-step: (1) `generateOtp(email, mobile)` stores OTP, (2) `register(name, email, mobile, otp, referralCode)` validates OTP then registers.
+- **LoginPage**: Add OTP step between form fill and registration submit.
+- **WalletPage**: Block withdrawal if KYC not approved. Show KYC prompt.
+- **ProfilePage**: Show KYC status card with link to KYC page.
 
 ### Remove
-- Nothing to remove
+- Nothing removed.
 
 ## Implementation Plan
-1. Fix LoginPage.tsx: better handling of "already authenticated" case - if `isAlreadyLoggedIn` is true when login button clicked, skip `login()` call entirely and just check user directly
-2. Fix AdminPage.tsx: replace `useIsAdmin()` with direct `useGetUser()` check + also try `actor.isCallerAdmin()` as backup
-3. Add multi-platform products to SAMPLE_DEALS in DealsPage.tsx - add 40 more products from Flipkart, Alibaba, Fiverr categories with platform field in trendingTag
-4. Add platform filter tabs: Amazon, Flipkart, Alibaba, Fiverr
-5. Add platform badge overlay on deal card images
-6. Add platform field to AdminPage DealForm
+1. Update `main.mo` backend:
+   - Add `PersistentOtp` type with code, email, mobile, expiry, used flag
+   - Add `otpStore` map (Principal -> OtpRecord)
+   - Add `generateOtp(email, mobile)` function -- generates 6-digit code, stores it, returns it (demo mode: returns OTP so frontend can show it)
+   - Add `verifyOtp(email, mobile, otp)` function -- checks code, expiry, marks used
+   - Add `PersistentKyc` type: docType (Aadhaar/PAN), docNumber, status (pending/approved/rejected), submittedAt, reviewedAt
+   - Add `kycStore` map (Principal -> KycRecord)
+   - Add `submitKyc(docType, docNumber)` function
+   - Add `getMyKyc()` function
+   - Add `getAllKyc()` admin function
+   - Add `approveKyc(userId)` admin function
+   - Add `rejectKyc(userId, reason)` admin function
+   - Modify `register()` to accept `otp` parameter and validate before registering
+   - Modify `requestWithdrawal()` to check KYC approved status
+
+2. Update frontend:
+   - Show new logo image on LoginPage, loading screens
+   - Add OTP step to registration flow (after form fill, before submit)
+   - Add `/kyc` route and KYcPage component
+   - Add KYC status card on ProfilePage
+   - Add KYC tab in AdminPage
+   - Update useQueries.ts with new hooks (useGenerateOtp, useVerifyOtp, useSubmitKyc, useGetMyKyc, useGetAllKyc, useApproveKyc, useRejectKyc)
+   - Block wallet withdrawal if KYC not approved

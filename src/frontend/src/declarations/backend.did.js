@@ -81,6 +81,24 @@ export const PersistentAdminAffiliateSettings = IDL.Record({
   'supportPhone' : IDL.Opt(IDL.Text),
   'platformName' : IDL.Text,
 });
+export const KycStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
+});
+export const KycDocType = IDL.Variant({
+  'pan' : IDL.Null,
+  'aadhaar' : IDL.Null,
+});
+export const KycRecord = IDL.Record({
+  'status' : KycStatus,
+  'docNumber' : IDL.Text,
+  'userId' : IDL.Principal,
+  'rejectionReason' : IDL.Opt(IDL.Text),
+  'submittedAt' : Time,
+  'reviewedAt' : IDL.Opt(Time),
+  'docType' : KycDocType,
+});
 export const TransactionStatus = IDL.Variant({
   'pending' : IDL.Null,
   'approved' : IDL.Null,
@@ -161,6 +179,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'adjustWalletBalance' : IDL.Func([IDL.Principal, IDL.Int], [], []),
+  'approveKyc' : IDL.Func([IDL.Principal], [], []),
   'approveWithdrawal' : IDL.Func([IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'calculateProfit' : IDL.Func(
@@ -171,6 +190,7 @@ export const idlService = IDL.Service({
   'clearMessages' : IDL.Func([], [], []),
   'creditCommission' : IDL.Func([IDL.Principal, IDL.Nat, IDL.Text], [], []),
   'deleteDeal' : IDL.Func([IDL.Nat], [], []),
+  'generateOtp' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'getActiveDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
   'getAdminCommissionSummary' : IDL.Func(
       [IDL.Text],
@@ -199,11 +219,13 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAllDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
+  'getAllKyc' : IDL.Func([], [IDL.Vec(KycRecord)], ['query']),
   'getAllTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
   'getAllUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getLeaderboard' : IDL.Func([], [IDL.Vec(LeaderboardEntry)], ['query']),
   'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+  'getMyKyc' : IDL.Func([], [IDL.Opt(KycRecord)], ['query']),
   'getTransactionStatusSummary' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(TransactionStatusSummary)],
@@ -217,6 +239,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'rejectKyc' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   'rejectWithdrawal' : IDL.Func([IDL.Nat], [], []),
   'requestWithdrawal' : IDL.Func([IDL.Nat], [IDL.Nat], []),
   'saveAdminAffiliateSettings' : IDL.Func(
@@ -225,6 +248,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'setAdmin' : IDL.Func([IDL.Principal], [], []),
+  'submitKyc' : IDL.Func([KycDocType, IDL.Text], [], []),
   'trackShare' : IDL.Func([IDL.Nat], [], []),
   'updateAdminCommissionSummary' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'updateAffiliateAccountStats' : IDL.Func(
@@ -253,6 +277,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateUser' : IDL.Func([IDL.Text], [], []),
+  'verifyOtp' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -330,6 +355,21 @@ export const idlFactory = ({ IDL }) => {
     'contactEmail' : IDL.Opt(IDL.Text),
     'supportPhone' : IDL.Opt(IDL.Text),
     'platformName' : IDL.Text,
+  });
+  const KycStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
+  const KycDocType = IDL.Variant({ 'pan' : IDL.Null, 'aadhaar' : IDL.Null });
+  const KycRecord = IDL.Record({
+    'status' : KycStatus,
+    'docNumber' : IDL.Text,
+    'userId' : IDL.Principal,
+    'rejectionReason' : IDL.Opt(IDL.Text),
+    'submittedAt' : Time,
+    'reviewedAt' : IDL.Opt(Time),
+    'docType' : KycDocType,
   });
   const TransactionStatus = IDL.Variant({
     'pending' : IDL.Null,
@@ -411,6 +451,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'adjustWalletBalance' : IDL.Func([IDL.Principal, IDL.Int], [], []),
+    'approveKyc' : IDL.Func([IDL.Principal], [], []),
     'approveWithdrawal' : IDL.Func([IDL.Nat], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'calculateProfit' : IDL.Func(
@@ -421,6 +462,7 @@ export const idlFactory = ({ IDL }) => {
     'clearMessages' : IDL.Func([], [], []),
     'creditCommission' : IDL.Func([IDL.Principal, IDL.Nat, IDL.Text], [], []),
     'deleteDeal' : IDL.Func([IDL.Nat], [], []),
+    'generateOtp' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'getActiveDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
     'getAdminCommissionSummary' : IDL.Func(
         [IDL.Text],
@@ -449,11 +491,13 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getAllDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
+    'getAllKyc' : IDL.Func([], [IDL.Vec(KycRecord)], ['query']),
     'getAllTransactions' : IDL.Func([], [IDL.Vec(Transaction)], ['query']),
     'getAllUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getLeaderboard' : IDL.Func([], [IDL.Vec(LeaderboardEntry)], ['query']),
     'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+    'getMyKyc' : IDL.Func([], [IDL.Opt(KycRecord)], ['query']),
     'getTransactionStatusSummary' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(TransactionStatusSummary)],
@@ -467,6 +511,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'rejectKyc' : IDL.Func([IDL.Principal, IDL.Text], [], []),
     'rejectWithdrawal' : IDL.Func([IDL.Nat], [], []),
     'requestWithdrawal' : IDL.Func([IDL.Nat], [IDL.Nat], []),
     'saveAdminAffiliateSettings' : IDL.Func(
@@ -475,6 +520,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'setAdmin' : IDL.Func([IDL.Principal], [], []),
+    'submitKyc' : IDL.Func([KycDocType, IDL.Text], [], []),
     'trackShare' : IDL.Func([IDL.Nat], [], []),
     'updateAdminCommissionSummary' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'updateAffiliateAccountStats' : IDL.Func(
@@ -512,6 +558,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateUser' : IDL.Func([IDL.Text], [], []),
+    'verifyOtp' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
   });
 };
 
