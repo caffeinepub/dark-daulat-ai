@@ -73,7 +73,7 @@ export default function SharePage() {
   };
 
   const shareWhatsApp = () => {
-    const message = `🤑 *Dark Daulat AI* se mujhe kamayi ho rahi hai! Aap bhi join karo aur products share karke commission kamao.\n\n💎 Mera Referral Code: *${referralCode}*\n🔗 Join Karo: ${referralLink}\n\n✅ Har purchase pe 5-20% commission milta hai!\n💰 Mujhe bhi 5% lifetime bonus milega aapki kamayi se!`;
+    const message = `🤑 *Dark Daulat AI* se kamayi karo! Products share karo aur commission kamao.\n\n💎 Referral Code: *${referralCode}*\n🔗 Join Karo: ${referralLink}\n\n✅ Har purchase pe 5-20% commission milta hai!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 

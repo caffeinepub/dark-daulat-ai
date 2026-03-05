@@ -38,8 +38,8 @@ function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
       }}
     >
       <img
-        src="/assets/generated/dark-daulat-logo-transparent.dim_512x512.png"
-        className="w-full h-full object-contain"
+        src="/assets/generated/dark-daulat-logo-icon.dim_512x512.png"
+        className="w-full h-full object-contain rounded-2xl"
         alt="Dark Daulat AI Logo"
       />
     </div>
@@ -352,8 +352,8 @@ export default function LoginPage() {
             }}
           >
             <img
-              src="/assets/generated/dark-daulat-logo-transparent.dim_512x512.png"
-              className="w-20 h-20 object-contain"
+              src="/assets/generated/dark-daulat-logo-icon.dim_512x512.png"
+              className="w-20 h-20 object-contain rounded-2xl"
               alt="Dark Daulat AI Logo"
             />
           </motion.div>

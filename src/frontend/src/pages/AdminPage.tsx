@@ -10,18 +10,21 @@ import {
   BarChart3,
   Check,
   Edit2,
+  ExternalLink,
   Link2,
   Loader2,
   Plus,
   Receipt,
   Settings,
   ShieldCheck,
+  Sparkles,
   Tag,
   Trash2,
   TrendingUp,
   Users,
   Wallet,
   X,
+  Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -283,6 +286,494 @@ function DealForm({
   );
 }
 
+// ─── Quick Affiliate Link Import ─────────────────────────────────────────────
+interface ParsedProduct {
+  title: string;
+  price: string;
+  commissionPercent: string;
+  affiliateLink: string;
+  imageUrl: string;
+  trendingTag: string;
+  targetRegion: string;
+  description: string;
+  platform: string;
+}
+
+function detectPlatform(url: string): string {
+  if (
+    url.includes("amazon.in") ||
+    url.includes("amzn.in") ||
+    url.includes("amazon.com")
+  )
+    return "Amazon";
+  if (url.includes("flipkart.com")) return "Flipkart";
+  if (url.includes("aliexpress.com")) return "AliExpress";
+  if (url.includes("fiverr.com")) return "Fiverr";
+  if (url.includes("meesho.com")) return "Meesho";
+  if (url.includes("myntra.com")) return "Myntra";
+  if (url.includes("snapdeal.com")) return "Snapdeal";
+  return "Other";
+}
+
+function getDefaultCommission(platform: string): string {
+  switch (platform) {
+    case "Amazon":
+      return "8";
+    case "Flipkart":
+      return "10";
+    case "AliExpress":
+      return "12";
+    case "Fiverr":
+      return "20";
+    case "Meesho":
+      return "15";
+    default:
+      return "10";
+  }
+}
+
+function extractProductTitleFromUrl(url: string, platform: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+
+    if (platform === "Amazon") {
+      // Amazon URLs: /dp/ASIN or /product-name/dp/ASIN
+      const parts = pathname.split("/").filter(Boolean);
+      const dpIndex = parts.findIndex((p) => p === "dp");
+      if (dpIndex > 0) {
+        return parts[dpIndex - 1]
+          .replace(/-/g, " ")
+          .replace(/[+_]/g, " ")
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" ")
+          .slice(0, 80);
+      }
+    }
+    if (platform === "Flipkart") {
+      const parts = pathname.split("/").filter(Boolean);
+      if (parts.length > 0) {
+        return parts[0]
+          .replace(/-/g, " ")
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ")
+          .slice(0, 80);
+      }
+    }
+    if (platform === "Fiverr") {
+      const parts = pathname.split("/").filter(Boolean);
+      if (parts.length >= 2) {
+        return parts[parts.length - 1]
+          .replace(/-/g, " ")
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ")
+          .slice(0, 80);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return "";
+}
+
+function QuickImportSection({
+  onImported,
+}: { onImported: (data: DealFormData) => void }) {
+  const [url, setUrl] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parsed, setParsed] = useState<ParsedProduct | null>(null);
+  const [editableTitle, setEditableTitle] = useState("");
+  const [editablePrice, setEditablePrice] = useState("");
+  const [editableComm, setEditableComm] = useState("");
+  const [editableDesc, setEditableDesc] = useState("");
+
+  const inputStyle = {
+    background: "oklch(0.10 0 0)",
+    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+    color: "oklch(0.96 0.015 85)",
+    fontSize: "14px",
+  };
+
+  const handleParse = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      toast.error("Pehle URL paste karo");
+      return;
+    }
+    // Basic URL check
+    try {
+      new URL(trimmed);
+    } catch {
+      toast.error("Sahi URL nahi hai. https:// se shuru karo");
+      return;
+    }
+
+    setParsing(true);
+    await new Promise((r) => setTimeout(r, 800)); // Simulate parsing
+
+    const platform = detectPlatform(trimmed);
+    const defaultComm = getDefaultCommission(platform);
+    const extractedTitle = extractProductTitleFromUrl(trimmed, platform);
+    const title = extractedTitle || `${platform} Product`;
+
+    // Platform-specific tag suggestions
+    const platformTags: Record<string, string> = {
+      Amazon: "Amazon Deal",
+      Flipkart: "Flipkart Sale",
+      AliExpress: "AliExpress Offer",
+      Fiverr: "Fiverr Service",
+      Meesho: "Meesho Deal",
+      Myntra: "Fashion Deal",
+    };
+
+    const result: ParsedProduct = {
+      title,
+      price: "999",
+      commissionPercent: defaultComm,
+      affiliateLink: trimmed,
+      imageUrl: "",
+      trendingTag: platformTags[platform] ?? "Hot Deal",
+      targetRegion: "Pan India",
+      description: `${platform} se best deal -- affiliate link ke zariye khareedne par ${defaultComm}% commission milegi.`,
+      platform,
+    };
+
+    setParsed(result);
+    setEditableTitle(result.title);
+    setEditablePrice(result.price);
+    setEditableComm(result.commissionPercent);
+    setEditableDesc(result.description);
+    setParsing(false);
+    toast.success(
+      `${platform} link detect hua! Details fill karo aur add karo.`,
+    );
+  };
+
+  const handleAddDeal = () => {
+    if (!parsed) return;
+    if (!editableTitle.trim() || !editablePrice || !editableComm) {
+      toast.error("Title, price aur commission zaroori hain");
+      return;
+    }
+    onImported({
+      title: editableTitle,
+      price: editablePrice,
+      commissionPercent: editableComm,
+      affiliateLink: parsed.affiliateLink,
+      imageUrl: parsed.imageUrl,
+      trendingTag: parsed.trendingTag,
+      targetRegion: parsed.targetRegion,
+      description: editableDesc,
+    });
+    // Reset
+    setUrl("");
+    setParsed(null);
+    setEditableTitle("");
+    setEditablePrice("");
+    setEditableComm("");
+    setEditableDesc("");
+  };
+
+  const platformColors: Record<string, { bg: string; text: string }> = {
+    Amazon: { bg: "oklch(0.75 0.15 50 / 0.15)", text: "oklch(0.85 0.15 50)" },
+    Flipkart: {
+      bg: "oklch(0.55 0.22 260 / 0.15)",
+      text: "oklch(0.70 0.20 260)",
+    },
+    AliExpress: {
+      bg: "oklch(0.65 0.22 28 / 0.15)",
+      text: "oklch(0.75 0.20 28)",
+    },
+    Fiverr: { bg: "oklch(0.60 0.22 155 / 0.15)", text: "oklch(0.72 0.20 155)" },
+    Meesho: { bg: "oklch(0.68 0.22 330 / 0.15)", text: "oklch(0.78 0.18 330)" },
+    Myntra: { bg: "oklch(0.65 0.22 340 / 0.15)", text: "oklch(0.75 0.20 340)" },
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl p-4 space-y-3 mb-3"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.6), oklch(0.12 0.02 85 / 0.4))",
+        border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+        boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.1)",
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Zap size={15} style={{ color: "oklch(0.86 0.14 85)" }} />
+        <p
+          className="text-sm font-bold"
+          style={{ color: "oklch(0.86 0.14 85)" }}
+        >
+          Quick Affiliate Link Import
+        </p>
+        <span
+          className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold"
+          style={{
+            background: "oklch(0.55 0.18 145 / 0.2)",
+            color: "oklch(0.70 0.18 145)",
+            border: "1px solid oklch(0.55 0.18 145 / 0.3)",
+          }}
+        >
+          NEW
+        </span>
+      </div>
+      <p className="text-xs" style={{ color: "oklch(0.55 0.01 85)" }}>
+        Amazon, Flipkart, AliExpress, Fiverr ya kisi bhi e-commerce site ka
+        affiliate link paste karo -- details automatically fill ho jaayengi
+      </p>
+
+      {/* URL Input Row */}
+      <div className="flex gap-2">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          data-ocid="admin.quick_import_url_input"
+          placeholder="https://www.amazon.in/dp/... ya koi bhi affiliate link"
+          className="h-10 rounded-xl text-xs flex-1"
+          style={inputStyle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleParse();
+          }}
+        />
+        <Button
+          onClick={handleParse}
+          disabled={parsing || !url.trim()}
+          data-ocid="admin.quick_import_parse_button"
+          className="h-10 px-4 rounded-xl text-xs font-semibold shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+            color: "oklch(0.08 0 0)",
+            border: "none",
+          }}
+        >
+          {parsing ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <>
+              <Sparkles size={14} className="mr-1" /> Import
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Platform examples */}
+      {!parsed && (
+        <div className="flex flex-wrap gap-1.5">
+          {["Amazon", "Flipkart", "AliExpress", "Fiverr", "Meesho"].map((p) => (
+            <span
+              key={p}
+              className="text-[10px] px-2 py-0.5 rounded-full"
+              style={{
+                background: platformColors[p]?.bg ?? "oklch(0.14 0 0)",
+                color: platformColors[p]?.text ?? "oklch(0.62 0.01 85)",
+                border: `1px solid ${platformColors[p]?.text ?? "oklch(0.28 0.01 85)"}/0.3`,
+              }}
+            >
+              {p}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Parsed Result */}
+      {parsed && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="space-y-3 pt-2 border-t"
+          style={{ borderColor: "oklch(0.28 0.04 85 / 0.3)" }}
+        >
+          {/* Platform badge + link preview */}
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs px-2.5 py-1 rounded-full font-semibold"
+              style={{
+                background:
+                  platformColors[parsed.platform]?.bg ?? "oklch(0.14 0 0)",
+                color:
+                  platformColors[parsed.platform]?.text ??
+                  "oklch(0.62 0.01 85)",
+              }}
+            >
+              {parsed.platform} ✓
+            </span>
+            <a
+              href={parsed.affiliateLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[10px] underline"
+              style={{ color: "oklch(0.55 0.01 85)" }}
+            >
+              Link preview <ExternalLink size={10} />
+            </a>
+          </div>
+
+          <p
+            className="text-xs font-semibold"
+            style={{ color: "oklch(0.78 0.12 85)" }}
+          >
+            Neeche details check karo aur zarurat ho to edit karo:
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Title */}
+            <div className="col-span-2">
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Product Title *
+              </Label>
+              <Input
+                value={editableTitle}
+                onChange={(e) => setEditableTitle(e.target.value)}
+                data-ocid="admin.quick_import_title_input"
+                placeholder="Product ka naam"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Price (₹) *
+              </Label>
+              <Input
+                type="number"
+                value={editablePrice}
+                onChange={(e) => setEditablePrice(e.target.value)}
+                data-ocid="admin.quick_import_price_input"
+                placeholder="999"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Commission */}
+            <div>
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Commission % *
+              </Label>
+              <Input
+                type="number"
+                value={editableComm}
+                onChange={(e) => setEditableComm(e.target.value)}
+                data-ocid="admin.quick_import_commission_input"
+                placeholder="8"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Image URL */}
+            <div className="col-span-2">
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Product Image URL (Optional)
+              </Label>
+              <Input
+                value={parsed.imageUrl}
+                onChange={(e) =>
+                  setParsed((prev) =>
+                    prev ? { ...prev, imageUrl: e.target.value } : null,
+                  )
+                }
+                data-ocid="admin.quick_import_image_input"
+                placeholder="https://image.jpg"
+                className="h-9 rounded-lg"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="col-span-2">
+              <Label
+                className="text-xs mb-1 block"
+                style={{ color: "oklch(0.62 0.01 85)" }}
+              >
+                Description
+              </Label>
+              <textarea
+                value={editableDesc}
+                onChange={(e) => setEditableDesc(e.target.value)}
+                placeholder="Deal description..."
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg text-xs resize-none outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Commission info box */}
+          <div
+            className="rounded-lg p-2.5 text-xs"
+            style={{
+              background: "oklch(0.55 0.18 145 / 0.08)",
+              border: "1px solid oklch(0.55 0.18 145 / 0.25)",
+              color: "oklch(0.70 0.18 145)",
+            }}
+          >
+            <p className="font-semibold mb-0.5">Commission Flow:</p>
+            <p style={{ color: "oklch(0.55 0.01 85)" }}>
+              {parsed.platform} aapko {editableComm || "?"}% dega → Aap user ko
+              commission credit karoge → 2% admin pool mein jayega
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleAddDeal}
+              data-ocid="admin.quick_import_add_button"
+              className="flex-1 h-10 text-sm rounded-xl font-semibold"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                color: "oklch(0.08 0 0)",
+                border: "none",
+              }}
+            >
+              <Plus size={15} className="mr-1.5" />
+              Ye Deal App Mein Add Karo
+            </Button>
+            <Button
+              onClick={() => {
+                setParsed(null);
+                setUrl("");
+              }}
+              variant="outline"
+              className="h-10 px-4 rounded-xl text-xs"
+              style={{
+                background: "oklch(0.12 0 0)",
+                border: "1px solid oklch(0.22 0.01 85)",
+                color: "oklch(0.52 0.01 85)",
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
 // ─── Deals Tab ────────────────────────────────────────────────────────────────
 function DealsTab() {
   const { data: deals = [], isLoading } = useGetAllDeals();
@@ -350,21 +841,70 @@ function DealsTab() {
     }
   };
 
+  const handleImportedDeal = async (form: DealFormData) => {
+    if (
+      !form.title ||
+      !form.price ||
+      !form.commissionPercent ||
+      !form.affiliateLink
+    ) {
+      toast.error("Title, price, commission, aur link required hain");
+      return;
+    }
+    try {
+      await addDeal.mutateAsync({
+        title: form.title,
+        imageUrl: form.imageUrl,
+        price: BigInt(Math.floor(Number(form.price))),
+        affiliateLink: form.affiliateLink,
+        commissionPercent: BigInt(Math.floor(Number(form.commissionPercent))),
+        trendingTag: form.trendingTag,
+        targetRegion: form.targetRegion,
+        description: form.description,
+      });
+      toast.success("Deal successfully add ho gayi! ✅");
+    } catch {
+      toast.error("Deal add fail hui");
+    }
+  };
+
   return (
     <div className="space-y-3">
+      {/* Quick Import Section -- always visible */}
+      {!editingId && <QuickImportSection onImported={handleImportedDeal} />}
+
+      {/* Divider */}
+      {!editingId && (
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1 h-px"
+            style={{ background: "oklch(0.22 0.01 85)" }}
+          />
+          <span
+            className="text-[10px]"
+            style={{ color: "oklch(0.40 0.01 85)" }}
+          >
+            YA MANUALLY ADD KARO
+          </span>
+          <div
+            className="flex-1 h-px"
+            style={{ background: "oklch(0.22 0.01 85)" }}
+          />
+        </div>
+      )}
+
       {!showForm && !editingId && (
         <Button
           onClick={() => setShowForm(true)}
           data-ocid="admin.add_deal_button"
           className="w-full h-10 text-sm rounded-xl"
           style={{
-            background:
-              "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
-            color: "oklch(0.08 0 0)",
-            border: "none",
+            background: "oklch(0.16 0 0)",
+            border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+            color: "oklch(0.78 0.12 85)",
           }}
         >
-          <Plus size={16} className="mr-1.5" /> Naya Deal Add Karo
+          <Plus size={16} className="mr-1.5" /> Manually Deal Add Karo
         </Button>
       )}
 

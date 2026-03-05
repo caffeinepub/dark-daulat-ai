@@ -11,16 +11,28 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png",
+      "src": "/assets/generated/dark-daulat-logo-icon-192.dim_192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/assets/generated/dark-daulat-icon.dim_512x512.png",
+      "src": "/assets/generated/dark-daulat-logo-icon.dim_512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/generated/dark-daulat-logo-icon-192.dim_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/generated/dark-daulat-logo-icon.dim_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
@@ -38,14 +50,14 @@
       "short_name": "Deals",
       "description": "AI Deals page kholein",
       "url": "/deals",
-      "icons": [{ "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/assets/generated/dark-daulat-logo-icon-192.dim_192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Wallet",
       "short_name": "Wallet",
       "description": "Apni kamayi dekho",
       "url": "/wallet",
-      "icons": [{ "src": "/assets/generated/dark-daulat-icon-192.dim_192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/assets/generated/dark-daulat-logo-icon-192.dim_192x192.png", "sizes": "192x192" }]
     }
   ]
 }

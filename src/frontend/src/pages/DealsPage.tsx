@@ -942,10 +942,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
     } catch {
       // Continue even if tracking fails
     }
-    const commissionAmt = Math.floor(
-      (Number(deal.price) * Number(deal.commissionPercent)) / 100,
-    );
-    const message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein! Mujhe ₹${commissionAmt} commission milega. Abhi kharido: ${deal.affiliateLink} — Dark Daulat AI ke through`;
+    const message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein!\n\nAbhi kharido: ${deal.affiliateLink}\n\n✅ Dark Daulat AI ke through best deals milti hain!`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -1458,6 +1455,29 @@ export default function DealsPage() {
             )}
           </>
         )}
+
+        {/* Amazon Affiliate Disclaimer */}
+        <div
+          className="mt-4 rounded-xl px-3 py-2.5 text-center"
+          style={{
+            background: "oklch(0.10 0 0 / 0.6)",
+            border: "1px solid oklch(0.22 0.01 85 / 0.4)",
+          }}
+        >
+          <p
+            className="text-[10px] leading-relaxed"
+            style={{ color: "oklch(0.42 0.01 85)" }}
+          >
+            📌{" "}
+            <strong style={{ color: "oklch(0.52 0.01 85)" }}>
+              Affiliate Disclosure:
+            </strong>{" "}
+            Dark Daulat AI ek Amazon Associates participant hai. In links se ki
+            gayi khareedari par hamen commission milti hai — aapko koi extra
+            charge nahi lagta. Flipkart, AliExpress aur Fiverr ke links bhi
+            affiliate program ke hisse hain.
+          </p>
+        </div>
       </div>
     </div>
   );

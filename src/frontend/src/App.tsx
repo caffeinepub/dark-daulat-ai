@@ -41,8 +41,8 @@ function LoadingScreen() {
           }}
         >
           <img
-            src="/assets/generated/dark-daulat-logo-transparent.dim_512x512.png"
-            className="w-14 h-14 object-contain"
+            src="/assets/generated/dark-daulat-logo-icon.dim_512x512.png"
+            className="w-14 h-14 object-contain rounded-xl"
             alt="Dark Daulat AI Logo"
           />
         </div>
