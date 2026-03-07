@@ -9,6 +9,8 @@ import {
   ArrowUpRight,
   BarChart3,
   Check,
+  CheckCircle2,
+  ClipboardList,
   Edit2,
   ExternalLink,
   Link2,
@@ -29,7 +31,13 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Deal, KycRecord, Transaction, User } from "../backend.d";
+import type {
+  Deal,
+  KycRecord,
+  PersistentPurchaseClaim,
+  Transaction,
+  User,
+} from "../backend.d";
 import { KycDocType } from "../backend.d";
 import {
   TransactionStatus as TxStatus,
@@ -43,11 +51,13 @@ import {
   useApproveWithdrawal,
   useCreditCommission,
   useDeleteDeal,
+  useGetAdminEarningsPool,
   useGetAdminStats,
   useGetAffiliateAccount,
   useGetAllAdminAffiliateSettings,
   useGetAllDeals,
   useGetAllKyc,
+  useGetAllPurchaseClaims,
   useGetAllTransactions,
   useGetAllUsers,
   useGetUser,
@@ -782,6 +792,37 @@ function DealsTab() {
   const deleteDeal = useDeleteDeal();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<bigint | null>(null);
+  const [clearingDemo, setClearingDemo] = useState(false);
+
+  const handleClearAllDeals = async () => {
+    if (deals.length === 0) {
+      toast.error("Koi bhi deal nahi hai delete karne ke liye");
+      return;
+    }
+    const confirmed = confirm(
+      `Kya aap sure hain? Sab ${deals.length} deals delete ho jaayengi. Yeh action undo nahi hoga.`,
+    );
+    if (!confirmed) return;
+    setClearingDemo(true);
+    let deleted = 0;
+    let failed = 0;
+    for (const deal of deals) {
+      try {
+        await deleteDeal.mutateAsync(deal.id);
+        deleted++;
+      } catch {
+        failed++;
+      }
+    }
+    setClearingDemo(false);
+    if (failed === 0) {
+      toast.success(
+        `✅ ${deleted} deals delete ho gayi! Ab real affiliate deals add karein.`,
+      );
+    } else {
+      toast.warning(`${deleted} deals delete hui, ${failed} fail hue.`);
+    }
+  };
 
   const handleAdd = async (form: DealFormData) => {
     if (
@@ -870,6 +911,59 @@ function DealsTab() {
 
   return (
     <div className="space-y-3">
+      {/* Clear All Demo Deals Button */}
+      {!editingId && deals.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl p-3 flex items-center justify-between gap-3"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.62 0.22 25 / 0.08), oklch(0.62 0.22 25 / 0.04))",
+            border: "1px solid oklch(0.62 0.22 25 / 0.4)",
+          }}
+        >
+          <div>
+            <p
+              className="text-xs font-semibold"
+              style={{ color: "oklch(0.78 0.20 25)" }}
+            >
+              🗑️ Saari Deals Ek Baar Mein Delete Karo
+            </p>
+            <p
+              className="text-[10px] mt-0.5"
+              style={{ color: "oklch(0.55 0.12 25)" }}
+            >
+              Demo products hataao aur apne real affiliate deals add karo
+            </p>
+          </div>
+          <Button
+            onClick={handleClearAllDeals}
+            disabled={clearingDemo || isLoading}
+            data-ocid="admin.clear_all_deals_button"
+            className="shrink-0 h-9 px-3 text-xs rounded-xl font-semibold"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.52 0.22 25), oklch(0.62 0.22 25))",
+              color: "oklch(0.96 0.01 25)",
+              border: "none",
+            }}
+          >
+            {clearingDemo ? (
+              <>
+                <Loader2 size={12} className="animate-spin mr-1" />
+                Delete ho raha hai...
+              </>
+            ) : (
+              <>
+                <Trash2 size={12} className="mr-1" />
+                Sab Delete Karo ({deals.length})
+              </>
+            )}
+          </Button>
+        </motion.div>
+      )}
+
       {/* Quick Import Section -- always visible */}
       {!editingId && <QuickImportSection onImported={handleImportedDeal} />}
 
@@ -1418,8 +1512,12 @@ function TransactionsTab() {
 function AdminEarningsTab() {
   const { data: stats, isLoading } = useGetAdminStats();
   const { data: allTxns = [] } = useGetAllTransactions();
+  const { data: adminEarningsPool = 0n } = useGetAdminEarningsPool();
 
-  // Calculate admin earnings from platform fee (2% of all approved withdrawals)
+  // Real admin earnings pool from backend (includes 3% purchase commission + 2% withdrawal fee + 2% commission share)
+  const totalAdminEarnings = Number(adminEarningsPool);
+
+  // Calculate admin earnings from platform fee (2% of all approved withdrawals) - for breakdown display
   const totalWithdrawn = allTxns
     .filter(
       (t) =>
@@ -1433,8 +1531,6 @@ function AdminEarningsTab() {
   // 2% commission from all credited commissions
   const totalCommissionPaid = stats ? Number(stats.totalCommissionPaid) : 0;
   const adminCommissionEarned = Math.floor(totalCommissionPaid * 0.02);
-
-  const totalAdminEarnings = platformFeeEarned + adminCommissionEarned;
 
   // Pending withdrawals (admin can withdraw their earnings)
   const pendingWithdrawals = allTxns.filter(
@@ -1472,7 +1568,7 @@ function AdminEarningsTab() {
 
   const earningCards = [
     {
-      label: "Kul Admin Kamaai",
+      label: "Kul Admin Kamaai (Real)",
       value: `₹${formatINR(totalAdminEarnings)}`,
       icon: "💰",
       gold: true,
@@ -1564,6 +1660,11 @@ function AdminEarningsTab() {
         </p>
         <div className="space-y-2">
           {[
+            {
+              icon: "🛒",
+              title: "3% Purchase Commission (Automatic)",
+              desc: "Jab koi user affiliate link se khareedari kare, 3% automatically admin pool mein jaata hai. User ko 2% milta hai — total 5% ka split.",
+            },
             {
               icon: "💸",
               title: "2% Platform Fee",
@@ -2549,6 +2650,345 @@ function KycTab() {
   );
 }
 
+// ─── Claims Tab ───────────────────────────────────────────────────────────────
+function ClaimsTab() {
+  const { data: allClaims = [], isLoading } = useGetAllPurchaseClaims();
+  const { data: allDeals = [] } = useGetAllDeals();
+
+  const [filter, setFilter] = useState<
+    "pending" | "approved" | "rejected" | "all"
+  >("all");
+
+  const getStatusStr = (claim: PersistentPurchaseClaim) =>
+    claim.status as unknown as string;
+
+  const filteredClaims = allClaims.filter((c) => {
+    const s = getStatusStr(c);
+    if (filter === "all") return true;
+    return s === filter;
+  });
+
+  const pendingCount = allClaims.filter(
+    (c) => getStatusStr(c) === "pending",
+  ).length;
+
+  const getDealTitle = (dealId: bigint) => {
+    const deal = allDeals.find((d) => d.id === dealId);
+    return deal?.title ?? `Deal #${Number(dealId)}`;
+  };
+
+  const shortPrincipal = (p: { toString: () => string }) => {
+    const s = p.toString();
+    return `${s.slice(0, 8)}...${s.slice(-4)}`;
+  };
+
+  const formatDate = (ts: bigint) => {
+    const ms = Number(ts / 1_000_000n);
+    return new Date(ms).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "2-digit",
+    });
+  };
+
+  const getStatusStyle = (status: string) => {
+    if (status === "approved")
+      return {
+        bg: "oklch(0.55 0.18 145 / 0.15)",
+        border: "oklch(0.55 0.18 145 / 0.4)",
+        color: "oklch(0.72 0.18 145)",
+      };
+    if (status === "rejected")
+      return {
+        bg: "oklch(0.62 0.22 25 / 0.15)",
+        border: "oklch(0.62 0.22 25 / 0.4)",
+        color: "oklch(0.68 0.22 25)",
+      };
+    return {
+      bg: "oklch(0.75 0.15 80 / 0.15)",
+      border: "oklch(0.75 0.15 80 / 0.4)",
+      color: "oklch(0.88 0.15 80)",
+    };
+  };
+
+  const filterTabs: Array<{ key: typeof filter; label: string }> = [
+    { key: "all", label: `Sab (${allClaims.length})` },
+    {
+      key: "approved",
+      label: `Approved (${allClaims.filter((c) => getStatusStr(c) === "approved").length})`,
+    },
+    { key: "pending", label: `Pending (${pendingCount})` },
+    { key: "rejected", label: "Rejected" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Automatic processing info banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl p-3 flex items-start gap-2.5"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.55 0.18 145 / 0.1), oklch(0.55 0.18 145 / 0.06))",
+          border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+        }}
+      >
+        <CheckCircle2
+          size={16}
+          className="shrink-0 mt-0.5"
+          style={{ color: "oklch(0.68 0.20 145)" }}
+        />
+        <p
+          className="text-xs leading-relaxed"
+          style={{ color: "oklch(0.70 0.18 145)" }}
+        >
+          <strong>Claims ab automatic process hoti hain</strong> — user purchase
+          confirm karte hi commission turant wallet mein jama ho jaati hai. Koi
+          approval nahi chahiye.
+        </p>
+      </motion.div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p
+            className="text-sm font-bold"
+            style={{ color: "oklch(0.86 0.14 85)" }}
+          >
+            Purchase Claims History
+          </p>
+          <p className="text-xs" style={{ color: "oklch(0.52 0.01 85)" }}>
+            {allClaims.length} total claims — read-only view
+          </p>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+        {filterTabs.map(({ key, label }) => (
+          <button
+            type="button"
+            key={key}
+            onClick={() => setFilter(key)}
+            data-ocid="admin.claims_filter.tab"
+            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            style={{
+              background:
+                filter === key
+                  ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
+                  : "oklch(0.14 0.01 85)",
+              color: filter === key ? "oklch(0.08 0 0)" : "oklch(0.55 0.01 85)",
+              border:
+                filter === key
+                  ? "1px solid oklch(0.78 0.12 85 / 0.5)"
+                  : "1px solid oklch(0.22 0.01 85)",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Claims list */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-shimmer h-24 rounded-xl" />
+          ))}
+        </div>
+      ) : filteredClaims.length === 0 ? (
+        <div
+          data-ocid="admin.claims_empty_state"
+          className="rounded-xl p-6 text-center"
+          style={{
+            background: "oklch(0.12 0 0)",
+            border: "1px solid oklch(0.22 0.01 85)",
+          }}
+        >
+          <ClipboardList
+            size={28}
+            className="mx-auto mb-2"
+            style={{ color: "oklch(0.32 0.04 85)" }}
+          />
+          <p className="text-sm" style={{ color: "oklch(0.45 0.01 85)" }}>
+            {filter === "all"
+              ? "Abhi koi claim nahi hai"
+              : `Koi ${filter} claim nahi hai`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredClaims.map((claim, idx) => {
+            const statusStr = getStatusStr(claim);
+            const isPending = statusStr === "pending";
+            const statusStyle = getStatusStyle(statusStr);
+
+            return (
+              <motion.div
+                key={Number(claim.id)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04 }}
+                data-ocid={`admin.claims.item.${idx + 1}`}
+                className="rounded-xl p-4 space-y-3"
+                style={{
+                  background:
+                    "linear-gradient(160deg, oklch(0.14 0.005 85), oklch(0.12 0.002 85))",
+                  border: `1px solid ${statusStyle.border}`,
+                }}
+              >
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-xs font-semibold line-clamp-1"
+                      style={{ color: "oklch(0.86 0.14 85)" }}
+                    >
+                      {getDealTitle(claim.dealId)}
+                    </p>
+                    <p
+                      className="text-[10px] mt-0.5 font-mono"
+                      style={{ color: "oklch(0.45 0.01 85)" }}
+                    >
+                      User: {shortPrincipal(claim.userId)}
+                    </p>
+                  </div>
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
+                    style={{
+                      background: statusStyle.bg,
+                      color: statusStyle.color,
+                    }}
+                  >
+                    {statusStr}
+                  </span>
+                </div>
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div
+                    className="rounded-lg px-2.5 py-1.5"
+                    style={{
+                      background: "oklch(0.10 0 0 / 0.5)",
+                      border: "1px solid oklch(0.20 0.01 85)",
+                    }}
+                  >
+                    <p style={{ color: "oklch(0.45 0.01 85)" }}>
+                      Tracking Code
+                    </p>
+                    <p
+                      className="font-mono font-semibold"
+                      style={{ color: "oklch(0.82 0.05 85)" }}
+                    >
+                      {claim.trackingCode}
+                    </p>
+                  </div>
+                  <div
+                    className="rounded-lg px-2.5 py-1.5"
+                    style={{
+                      background: "oklch(0.10 0 0 / 0.5)",
+                      border: "1px solid oklch(0.20 0.01 85)",
+                    }}
+                  >
+                    <p style={{ color: "oklch(0.45 0.01 85)" }}>Submitted</p>
+                    <p
+                      className="font-semibold"
+                      style={{ color: "oklch(0.72 0.05 85)" }}
+                    >
+                      {formatDate(claim.createdAt)}
+                    </p>
+                  </div>
+                  {claim.purchaseAmount > 0n && (
+                    <>
+                      <div
+                        className="rounded-lg px-2.5 py-1.5"
+                        style={{
+                          background: "oklch(0.10 0 0 / 0.5)",
+                          border: "1px solid oklch(0.20 0.01 85)",
+                        }}
+                      >
+                        <p style={{ color: "oklch(0.45 0.01 85)" }}>
+                          Purchase Amount
+                        </p>
+                        <p
+                          className="font-bold"
+                          style={{ color: "oklch(0.86 0.14 85)" }}
+                        >
+                          ₹{formatINR(claim.purchaseAmount)}
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-lg px-2.5 py-1.5"
+                        style={{
+                          background: "oklch(0.55 0.18 145 / 0.08)",
+                          border: "1px solid oklch(0.55 0.18 145 / 0.25)",
+                        }}
+                      >
+                        <p style={{ color: "oklch(0.55 0.01 85)" }}>
+                          Commission
+                        </p>
+                        <p
+                          className="font-bold"
+                          style={{ color: "oklch(0.72 0.18 145)" }}
+                        >
+                          ₹{formatINR(claim.commissionAmount)}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Rejection reason */}
+                {statusStr === "rejected" && claim.rejectionReason && (
+                  <div
+                    className="rounded-lg px-2.5 py-1.5 text-xs"
+                    style={{
+                      background: "oklch(0.62 0.22 25 / 0.1)",
+                      color: "oklch(0.68 0.22 25)",
+                    }}
+                  >
+                    Reason: {claim.rejectionReason}
+                  </div>
+                )}
+
+                {/* Pending but no amount yet — waiting for user to confirm */}
+                {isPending && claim.purchaseAmount === 0n && (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs text-center"
+                    style={{
+                      background: "oklch(0.75 0.15 80 / 0.08)",
+                      border: "1px solid oklch(0.75 0.15 80 / 0.25)",
+                      color: "oklch(0.75 0.15 80)",
+                    }}
+                  >
+                    ⏳ User ne abhi purchase confirm nahi kiya
+                  </div>
+                )}
+
+                {/* Auto-approved indicator */}
+                {!isPending && claim.purchaseAmount > 0n && (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs flex items-center gap-1.5"
+                    style={{
+                      background: "oklch(0.55 0.18 145 / 0.08)",
+                      border: "1px solid oklch(0.55 0.18 145 / 0.25)",
+                      color: "oklch(0.70 0.18 145)",
+                    }}
+                  >
+                    <CheckCircle2 size={11} />
+                    Commission automatically credited ho gayi
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { identity } = useInternetIdentity();
@@ -2722,7 +3162,7 @@ export default function AdminPage() {
       <div className="p-4">
         <Tabs defaultValue="earnings">
           <TabsList
-            className="w-full h-10 grid grid-cols-7 rounded-xl mb-4"
+            className="w-full h-10 grid grid-cols-8 rounded-xl mb-4"
             style={{
               background: "oklch(0.12 0 0)",
               border: "1px solid oklch(0.22 0.01 85)",
@@ -2730,6 +3170,7 @@ export default function AdminPage() {
           >
             {[
               { value: "earnings", icon: TrendingUp, label: "Earn" },
+              { value: "claims", icon: ClipboardList, label: "Claims" },
               { value: "deals", icon: Tag, label: "Deals" },
               { value: "users", icon: Users, label: "Users" },
               { value: "transactions", icon: Receipt, label: "TXNs" },
@@ -2754,6 +3195,9 @@ export default function AdminPage() {
 
           <TabsContent value="earnings">
             <AdminEarningsTab />
+          </TabsContent>
+          <TabsContent value="claims">
+            <ClaimsTab />
           </TabsContent>
           <TabsContent value="deals">
             <DealsTab />

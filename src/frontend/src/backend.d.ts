@@ -54,6 +54,21 @@ export interface PersistentAdminAffiliateSettings {
     supportPhone?: string;
     platformName: string;
 }
+export interface PersistentPurchaseClaim {
+    id: bigint;
+    status: PurchaseClaimStatus;
+    trackingCode: string;
+    userId: Principal;
+    createdAt: Time;
+    confirmedAt?: Time;
+    rejectionReason?: string;
+    purchaseAmount: bigint;
+    dealId: bigint;
+    userCommissionAmount: bigint;
+    reviewedAt?: Time;
+    adminCommissionAmount: bigint;
+    commissionAmount: bigint;
+}
 export interface AdminCommissionSummary {
     adminTotal: bigint;
     lastUpdated: Time;
@@ -106,16 +121,16 @@ export interface Deal {
     affiliateLink: string;
     price: bigint;
 }
+export interface Message {
+    role: MessageRole;
+    message: string;
+    timestamp: Time;
+}
 export interface ProfitCalculation {
     adminCut: bigint;
     expectedEarnings: bigint;
     referralBonus: bigint;
     netProfit: bigint;
-}
-export interface Message {
-    role: MessageRole;
-    message: string;
-    timestamp: Time;
 }
 export interface TransactionStatusSummary {
     pendingCount: bigint;
@@ -155,15 +170,19 @@ export interface backendInterface {
     addOrUpdateAffiliateAccount(details: PersistentPersistentAffiliateAccountDetails): Promise<void>;
     adjustWalletBalance(userId: Principal, amount: bigint): Promise<void>;
     approveKyc(userId: Principal): Promise<void>;
+    approvePurchaseClaim(claimId: bigint): Promise<void>;
     approveWithdrawal(transactionId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     calculateProfit(productPrice: bigint, commissionPercent: bigint): Promise<ProfitCalculation>;
     clearMessages(): Promise<void>;
+    confirmPurchase(trackingCode: string, purchaseAmount: bigint): Promise<void>;
+    createTrackingLink(dealId: bigint): Promise<string>;
     creditCommission(userId: Principal, amount: bigint, note: string): Promise<void>;
     deleteDeal(id: bigint): Promise<void>;
     generateOtp(email: string, mobile: string): Promise<string>;
     getActiveDeals(): Promise<Array<Deal>>;
     getAdminCommissionSummary(adminName: string): Promise<AdminCommissionSummary | null>;
+    getAdminEarningsPool(): Promise<bigint>;
     getAdminStats(): Promise<AdminStats>;
     getAffiliateAccount(accountId: Principal): Promise<PersistentPersistentAffiliateAccountDetails | null>;
     getAffiliateAccountStats(statsId: string): Promise<AffiliateAccountStats | null>;
@@ -171,21 +190,27 @@ export interface backendInterface {
     getAllAffiliateAccounts(): Promise<Array<PersistentPersistentAffiliateAccountDetails>>;
     getAllDeals(): Promise<Array<Deal>>;
     getAllKyc(): Promise<Array<KycRecord>>;
+    getAllPurchaseClaims(): Promise<Array<PersistentPurchaseClaim>>;
     getAllTransactions(): Promise<Array<Transaction>>;
     getAllUsers(): Promise<Array<User>>;
+    getCallerUserProfile(): Promise<User | null>;
     getCallerUserRole(): Promise<UserRole>;
     getLeaderboard(): Promise<Array<LeaderboardEntry>>;
     getMessages(): Promise<Array<Message>>;
     getMyKyc(): Promise<KycRecord | null>;
+    getMyPurchaseClaims(): Promise<Array<PersistentPurchaseClaim>>;
     getTransactionStatusSummary(summaryId: string): Promise<TransactionStatusSummary | null>;
     getTransactions(): Promise<Array<Transaction>>;
     getUser(): Promise<User | null>;
+    getUserProfile(user: Principal): Promise<User | null>;
     isCallerAdmin(): Promise<boolean>;
     register(name: string, email: string, mobile: string, referralCode: string | null): Promise<void>;
     rejectKyc(userId: Principal, reason: string): Promise<void>;
+    rejectPurchaseClaim(claimId: bigint, reason: string): Promise<void>;
     rejectWithdrawal(transactionId: bigint): Promise<void>;
     requestWithdrawal(amount: bigint): Promise<bigint>;
     saveAdminAffiliateSettings(settings: PersistentAdminAffiliateSettings): Promise<bigint>;
+    saveCallerUserProfile(profile: User): Promise<void>;
     setAdmin(user: Principal): Promise<void>;
     submitKyc(docType: KycDocType, docNumber: string): Promise<void>;
     trackShare(dealId: bigint): Promise<void>;

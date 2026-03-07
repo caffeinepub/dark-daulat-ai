@@ -11,7 +11,6 @@ import Time "mo:core/Time";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
-
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -228,6 +227,57 @@ actor {
   public type PersistentOtp = OtpRecord;
   let otpStore = Map.empty<Principal, PersistentOtp>();
 
+  // New Purchase Claim System
+  public type PurchaseClaimStatus = {
+    #pending;
+    #approved;
+    #rejected;
+  };
+
+  public type PersistentPurchaseClaim = {
+    id : Nat;
+    userId : Principal;
+    dealId : Nat;
+    trackingCode : Text;
+    purchaseAmount : Nat;
+    commissionAmount : Nat;
+    userCommissionAmount : Nat;
+    adminCommissionAmount : Nat;
+    status : PurchaseClaimStatus;
+    rejectionReason : ?Text;
+    createdAt : Time.Time;
+    confirmedAt : ?Time.Time;
+    reviewedAt : ?Time.Time;
+  };
+
+  var nextPurchaseClaimId : Nat = 1;
+  let purchaseClaims = Map.empty<Nat, PersistentPurchaseClaim>();
+
+  // NEW state variable for admin earnings pool
+  var adminEarningsPool : Nat = 0;
+
+  // Required User Profile Functions
+  public query ({ caller }) func getCallerUserProfile() : async ?User {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view their profile");
+    };
+    users.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?User {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    users.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : User) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    users.add(caller, profile);
+  };
+
   // OTP Functions
   public shared ({ caller }) func generateOtp(email : Text, mobile : Text) : async Text {
     let seed = (Time.now() / 1_000_000) % 1_000_000;
@@ -311,7 +361,7 @@ actor {
     };
   };
 
-  // getUser (no authorization check)
+  // getUser (no authorization check - returns caller's own data)
   public query ({ caller }) func getUser() : async ?User {
     users.get(caller);
   };
@@ -502,10 +552,12 @@ actor {
     };
   };
 
+  // Public access - anyone can view active deals
   public query ({ caller }) func getActiveDeals() : async [Deal] {
     deals.values().toArray().filter<Deal>(func(d) { d.isActive });
   };
 
+  // Public access - anyone can view all deals
   public query ({ caller }) func getAllDeals() : async [Deal] {
     deals.values().toArray();
   };
@@ -554,6 +606,7 @@ actor {
     };
   };
 
+  // Public access - pure calculation function
   public query func calculateProfit(productPrice : Nat, commissionPercent : Nat) : async ProfitCalculation {
     let expectedEarnings = (productPrice * commissionPercent) / 100;
     let referralBonus = (expectedEarnings * 5) / 100;
@@ -696,6 +749,275 @@ actor {
     transactions.values().toArray();
   };
 
+  // Core Purchase Claim Methods
+
+  public shared ({ caller }) func createTrackingLink(dealId : Nat) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Sirf registered users hi tracking link create kar sakte hain");
+    };
+
+    switch (deals.get(dealId)) {
+      case (null) { Runtime.trap("Deal nahi mili"); };
+      case (?deal) {
+        if (not deal.isActive) {
+          Runtime.trap("Deal abhi inactive hai");
+        };
+
+        let trackingCode = "TRK-" # (Time.now() % 1_000_000).toText() # "-" # dealId.toText();
+        let claim : PersistentPurchaseClaim = {
+          id = nextPurchaseClaimId;
+          userId = caller;
+          dealId;
+          trackingCode;
+          purchaseAmount = 0;
+          commissionAmount = 0;
+          userCommissionAmount = 0;
+          adminCommissionAmount = 0;
+          status = #pending;
+          rejectionReason = null;
+          createdAt = Time.now();
+          confirmedAt = null;
+          reviewedAt = null;
+        };
+
+        purchaseClaims.add(nextPurchaseClaimId, claim);
+        nextPurchaseClaimId += 1;
+
+        trackingCode;
+      };
+    };
+  };
+
+  // # CHANGE: Make confirmPurchase fully automatic
+  public shared ({ caller }) func confirmPurchase(trackingCode : Text, purchaseAmount : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Sirf registered users hi purchase confirm kar sakte hain");
+    };
+
+    let allClaims = purchaseClaims.entries().toArray();
+    let filteredClaims = allClaims.filter(
+      func((_, claim)) {
+        claim.trackingCode == trackingCode and claim.userId == caller and claim.status == #pending and claim.purchaseAmount == 0
+      }
+    );
+
+    if (filteredClaims.isEmpty()) {
+      Runtime.trap("Tracking code nahi mila ya already confirmed hai");
+    };
+
+    let (claimId, claim) = filteredClaims[0];
+    switch (deals.get(claim.dealId)) {
+      case (null) { Runtime.trap("Deal nahi mili"); };
+      case (?deal) {
+        if (not deal.isActive) {
+          Runtime.trap("Deal abhi inactive hai");
+        };
+
+        let commissionAmount = (purchaseAmount * deal.commissionPercent) / 100;
+        let userCommissionAmount = (purchaseAmount * 2) / 100;
+        let adminCommissionAmount = (purchaseAmount * 3) / 100;
+
+        // Fully automatic processing
+        let updatedClaim : PersistentPurchaseClaim = {
+          claim with
+          purchaseAmount;
+          commissionAmount;
+          userCommissionAmount;
+          adminCommissionAmount;
+          status = #approved; // Automatically approved
+          confirmedAt = ?Time.now();
+          reviewedAt = ?Time.now();
+        };
+        purchaseClaims.add(claimId, updatedClaim);
+
+        // Credit 2% to user
+        switch (users.get(claim.userId)) {
+          case (null) { Runtime.trap("User nahi mila"); };
+          case (?user) {
+            let updatedUser : PersistentUser = {
+              user with
+              walletBalance = user.walletBalance + userCommissionAmount;
+              totalEarnings = user.totalEarnings + userCommissionAmount;
+            };
+            users.add(claim.userId, updatedUser);
+
+            // Add 3% to admin earnings pool
+            adminEarningsPool += adminCommissionAmount;
+
+            let txn : PersistentTransaction = {
+              id = nextTransactionId;
+              userId = claim.userId;
+              amount = userCommissionAmount;
+              transactionType = #commission;
+              status = #approved;
+              note = "Purchase claim approved for deal: " # claim.dealId.toText();
+              timestamp = Time.now();
+            };
+            transactions.add(nextTransactionId, txn);
+            nextTransactionId += 1;
+
+            // Credit referral bonus if exists
+            switch (user.referredBy) {
+              case (null) {};
+              case (?referralCode) {
+                let allUsers = users.entries().toArray();
+                for ((principal, refUser) in allUsers.vals()) {
+                  if (refUser.referralCode == referralCode) {
+                    let referralBonus = (userCommissionAmount * 5) / 100;
+                    let updatedReferrer : PersistentUser = {
+                      refUser with
+                      walletBalance = refUser.walletBalance + referralBonus;
+                      totalEarnings = refUser.totalEarnings + referralBonus;
+                    };
+                    users.add(principal, updatedReferrer);
+
+                    let refTxn : PersistentTransaction = {
+                      id = nextTransactionId;
+                      userId = principal;
+                      amount = referralBonus;
+                      transactionType = #referral;
+                      status = #approved;
+                      note = "Referral bonus from " # user.name;
+                      timestamp = Time.now();
+                    };
+                    transactions.add(nextTransactionId, refTxn);
+                    nextTransactionId += 1;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func approvePurchaseClaim(claimId : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Sirf admin hi purchase claim approve kar sakte hain");
+    };
+
+    switch (purchaseClaims.get(claimId)) {
+      case (null) { Runtime.trap("Claim nahi mili"); };
+      case (?claim) {
+        if (claim.status != #pending or claim.purchaseAmount == 0) {
+          Runtime.trap("Claim approve nahi ho sakti");
+        };
+
+        let updatedClaim : PersistentPurchaseClaim = {
+          claim with
+          status = #approved;
+          reviewedAt = ?Time.now();
+        };
+        purchaseClaims.add(claimId, updatedClaim);
+
+        switch (users.get(claim.userId)) {
+          case (null) { Runtime.trap("User nahi mila"); };
+          case (?user) {
+            let updatedUser : PersistentUser = {
+              user with
+              walletBalance = user.walletBalance + claim.userCommissionAmount; // Credit 2% to user
+              totalEarnings = user.totalEarnings + claim.userCommissionAmount; // Credit 2% to user
+            };
+            users.add(claim.userId, updatedUser);
+
+            // Add 3% to admin earnings pool
+            adminEarningsPool += claim.adminCommissionAmount;
+
+            let txn : PersistentTransaction = {
+              id = nextTransactionId;
+              userId = claim.userId;
+              amount = claim.userCommissionAmount;
+              transactionType = #commission;
+              status = #approved;
+              note = "Purchase claim approved for deal: " # claim.dealId.toText();
+              timestamp = Time.now();
+            };
+            transactions.add(nextTransactionId, txn);
+            nextTransactionId += 1;
+
+            switch (user.referredBy) {
+              case (null) {};
+              case (?referralCode) {
+                let allUsers = users.entries().toArray();
+                for ((principal, refUser) in allUsers.vals()) {
+                  if (refUser.referralCode == referralCode) {
+                    let referralBonus = (claim.userCommissionAmount * 5) / 100;
+                    let updatedReferrer : PersistentUser = {
+                      refUser with
+                      walletBalance = refUser.walletBalance + referralBonus;
+                      totalEarnings = refUser.totalEarnings + referralBonus;
+                    };
+                    users.add(principal, updatedReferrer);
+
+                    let refTxn : PersistentTransaction = {
+                      id = nextTransactionId;
+                      userId = principal;
+                      amount = referralBonus;
+                      transactionType = #referral;
+                      status = #approved;
+                      note = "Referral bonus from " # user.name;
+                      timestamp = Time.now();
+                    };
+                    transactions.add(nextTransactionId, refTxn);
+                    nextTransactionId += 1;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public query ({ caller }) func getAdminEarningsPool() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view admin earnings pool");
+    };
+    adminEarningsPool;
+  };
+
+  public shared ({ caller }) func rejectPurchaseClaim(claimId : Nat, reason : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Sirf admin hi purchase claim reject kar sakte hain");
+    };
+
+    switch (purchaseClaims.get(claimId)) {
+      case (null) { Runtime.trap("Claim nahi mili"); };
+      case (?claim) {
+        if (claim.status != #pending) {
+          Runtime.trap("Claim reject nahi ho sakti");
+        };
+
+        let updatedClaim : PersistentPurchaseClaim = {
+          claim with
+          status = #rejected;
+          rejectionReason = ?reason;
+          reviewedAt = ?Time.now();
+        };
+        purchaseClaims.add(claimId, updatedClaim);
+      };
+    };
+  };
+
+  public query ({ caller }) func getMyPurchaseClaims() : async [PersistentPurchaseClaim] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Sirf registered users hi apne claims dekh sakte hain");
+    };
+
+    purchaseClaims.values().toArray().filter<PersistentPurchaseClaim>(
+      func(claim) { claim.userId == caller }
+    );
+  };
+
+  public query ({ caller }) func getAllPurchaseClaims() : async [PersistentPurchaseClaim] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Sirf admin hi sab claims dekh sakte hain");
+    };
+    purchaseClaims.values().toArray();
+  };
+
   public shared ({ caller }) func creditCommission(userId : Principal, amount : Nat, note : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can credit commission");
@@ -760,7 +1082,7 @@ actor {
     };
   };
 
-  // Referral Leaderboard
+  // Referral Leaderboard - Public access
   public query func getLeaderboard() : async [LeaderboardEntry] {
     let allUsers = users.entries().toArray();
     let sorted = allUsers.sort(

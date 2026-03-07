@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  ArrowRight,
+  ClipboardList,
   Copy,
   Crown,
   Gift,
-  Loader2,
   Share2,
   Trophy,
   Users,
@@ -15,7 +16,11 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import type { LeaderboardEntry } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { useGetLeaderboard, useGetUser } from "../hooks/useQueries";
+import {
+  useGetLeaderboard,
+  useGetMyPurchaseClaims,
+  useGetUser,
+} from "../hooks/useQueries";
 
 function formatINR(val: bigint | number) {
   return Number(val).toLocaleString("en-IN");
@@ -52,6 +57,13 @@ export default function SharePage() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: user, isLoading } = useGetUser();
   const { data: leaderboard = [], isLoading: lbLoading } = useGetLeaderboard();
+  const { data: myClaims = [] } = useGetMyPurchaseClaims();
+
+  // Count pending claims that need purchase confirmation (purchaseAmount == 0)
+  const pendingConfirmCount = myClaims.filter(
+    (c) =>
+      (c.status as unknown as string) === "pending" && c.purchaseAmount === 0n,
+  ).length;
 
   useEffect(() => {
     if (!isInitializing && !identity) {
@@ -218,6 +230,77 @@ export default function SharePage() {
               WhatsApp pe Share Karo
             </Button>
           </div>
+        </motion.div>
+
+        {/* Meri Claims Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/my-claims" })}
+            data-ocid="share.claims_button"
+            className="w-full rounded-2xl p-4 text-left transition-all active:scale-98"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.7), oklch(0.18 0.06 85 / 0.5))",
+              border: "1px solid oklch(0.78 0.12 85 / 0.4)",
+              boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.1)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                  }}
+                >
+                  <ClipboardList
+                    size={18}
+                    style={{ color: "oklch(0.08 0 0)" }}
+                  />
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-bold"
+                    style={{ color: "oklch(0.86 0.14 85)" }}
+                  >
+                    Meri Claims Dekho
+                  </p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "oklch(0.55 0.01 85)" }}
+                  >
+                    {pendingConfirmCount > 0
+                      ? `${pendingConfirmCount} purchase confirm karna baaki hai!`
+                      : "Share karo, khareedari track karo"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {pendingConfirmCount > 0 && (
+                  <span
+                    className="text-xs px-2.5 py-1 rounded-full font-bold"
+                    style={{
+                      background: "oklch(0.75 0.15 80 / 0.25)",
+                      color: "oklch(0.88 0.15 80)",
+                      border: "1px solid oklch(0.75 0.15 80 / 0.4)",
+                    }}
+                  >
+                    {pendingConfirmCount}
+                  </span>
+                )}
+                <ArrowRight
+                  size={18}
+                  style={{ color: "oklch(0.62 0.08 85)" }}
+                />
+              </div>
+            </div>
+          </button>
         </motion.div>
 
         {/* 5% Bonus Highlight */}

@@ -8,6 +8,7 @@ import type {
   Message,
   PersistentAdminAffiliateSettings,
   PersistentPersistentAffiliateAccountDetails,
+  PersistentPurchaseClaim,
   ProfitCalculation,
   Transaction,
   User,
@@ -674,5 +675,137 @@ export function useRejectKyc() {
       return actor.rejectKyc(userId, reason);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["allKyc"] }),
+  });
+}
+
+// ─── Purchase Claims Queries & Mutations ─────────────────────────────────────
+
+export function useGetMyPurchaseClaims() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<PersistentPurchaseClaim[]>({
+    queryKey: ["myPurchaseClaims", identity?.getPrincipal().toString()],
+    queryFn: async () => {
+      if (!actor || !identity) return [];
+      if (identity.getPrincipal().isAnonymous()) return [];
+      try {
+        const result = await actor.getMyPurchaseClaims();
+        return result ?? [];
+      } catch {
+        return [];
+      }
+    },
+    enabled:
+      !!actor &&
+      !isFetching &&
+      !!identity &&
+      !identity.getPrincipal().isAnonymous(),
+    staleTime: 0,
+  });
+}
+
+export function useGetAllPurchaseClaims() {
+  const { actor, isFetching } = useActor();
+  return useQuery<PersistentPurchaseClaim[]>({
+    queryKey: ["allPurchaseClaims"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        const result = await actor.getAllPurchaseClaims();
+        return result ?? [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 0,
+  });
+}
+
+export function useCreateTrackingLink() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (dealId: bigint): Promise<string> => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.createTrackingLink(dealId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myPurchaseClaims"] });
+    },
+  });
+}
+
+export function useConfirmPurchase() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      trackingCode,
+      purchaseAmount,
+    }: {
+      trackingCode: string;
+      purchaseAmount: bigint;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.confirmPurchase(trackingCode, purchaseAmount);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myPurchaseClaims"] });
+      qc.invalidateQueries({ queryKey: ["allPurchaseClaims"] });
+      qc.invalidateQueries({ queryKey: ["user"] });
+    },
+  });
+}
+
+export function useApprovePurchaseClaim() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (claimId: bigint) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.approvePurchaseClaim(claimId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allPurchaseClaims"] });
+      qc.invalidateQueries({ queryKey: ["allUsers"] });
+      qc.invalidateQueries({ queryKey: ["adminStats"] });
+    },
+  });
+}
+
+export function useRejectPurchaseClaim() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      claimId,
+      reason,
+    }: { claimId: bigint; reason: string }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.rejectPurchaseClaim(claimId, reason);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allPurchaseClaims"] });
+    },
+  });
+}
+
+// ─── Admin Earnings Pool ─────────────────────────────────────────────────────
+
+export function useGetAdminEarningsPool() {
+  const { actor, isFetching } = useActor();
+  return useQuery<bigint>({
+    queryKey: ["adminEarningsPool"],
+    queryFn: async () => {
+      if (!actor) return 0n;
+      try {
+        return await actor.getAdminEarningsPool();
+      } catch {
+        return 0n;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 0,
   });
 }

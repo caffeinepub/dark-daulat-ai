@@ -19,6 +19,7 @@ import DealsPage from "./pages/DealsPage";
 import HomePage from "./pages/HomePage";
 import KycPage from "./pages/KycPage";
 import LoginPage from "./pages/LoginPage";
+import MyClaimsPage from "./pages/MyClaimsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SharePage from "./pages/SharePage";
 import WalletPage from "./pages/WalletPage";
@@ -181,6 +182,12 @@ const kycRoute = createRoute({
   component: KycPage,
 });
 
+const myClaimsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/my-claims",
+  component: MyClaimsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appLayoutRoute.addChildren([
@@ -192,6 +199,7 @@ const routeTree = rootRoute.addChildren([
     profileRoute,
     chatRoute,
     kycRoute,
+    myClaimsRoute,
   ]),
   adminRoute,
 ]);

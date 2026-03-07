@@ -144,19 +144,21 @@ export default function ProfilePage() {
               Profile
             </h1>
           </div>
-          <a
-            href="/admin"
-            data-ocid="profile.admin_panel_link"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
-              color: "oklch(0.08 0 0)",
-            }}
-          >
-            <Settings size={12} />
-            Admin Panel
-          </a>
+          {user?.isAdmin && (
+            <a
+              href="/admin"
+              data-ocid="profile.admin_panel_link"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))",
+                color: "oklch(0.08 0 0)",
+              }}
+            >
+              <Settings size={12} />
+              Admin Panel
+            </a>
+          )}
         </div>
       </header>
 

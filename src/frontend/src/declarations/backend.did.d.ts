@@ -97,12 +97,30 @@ export interface PersistentPersistentAffiliateAccountDetails {
   'branchName' : [] | [string],
   'verificationStatus' : [] | [string],
 }
+export interface PersistentPurchaseClaim {
+  'id' : bigint,
+  'status' : PurchaseClaimStatus,
+  'trackingCode' : string,
+  'userId' : Principal,
+  'createdAt' : Time,
+  'confirmedAt' : [] | [Time],
+  'rejectionReason' : [] | [string],
+  'purchaseAmount' : bigint,
+  'dealId' : bigint,
+  'userCommissionAmount' : bigint,
+  'reviewedAt' : [] | [Time],
+  'adminCommissionAmount' : bigint,
+  'commissionAmount' : bigint,
+}
 export interface ProfitCalculation {
   'adminCut' : bigint,
   'expectedEarnings' : bigint,
   'referralBonus' : bigint,
   'netProfit' : bigint,
 }
+export type PurchaseClaimStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export type Time = bigint;
 export interface Transaction {
   'id' : bigint,
@@ -158,10 +176,13 @@ export interface _SERVICE {
   >,
   'adjustWalletBalance' : ActorMethod<[Principal, bigint], undefined>,
   'approveKyc' : ActorMethod<[Principal], undefined>,
+  'approvePurchaseClaim' : ActorMethod<[bigint], undefined>,
   'approveWithdrawal' : ActorMethod<[bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'calculateProfit' : ActorMethod<[bigint, bigint], ProfitCalculation>,
   'clearMessages' : ActorMethod<[], undefined>,
+  'confirmPurchase' : ActorMethod<[string, bigint], undefined>,
+  'createTrackingLink' : ActorMethod<[bigint], string>,
   'creditCommission' : ActorMethod<[Principal, bigint, string], undefined>,
   'deleteDeal' : ActorMethod<[bigint], undefined>,
   'generateOtp' : ActorMethod<[string, string], string>,
@@ -170,6 +191,7 @@ export interface _SERVICE {
     [string],
     [] | [AdminCommissionSummary]
   >,
+  'getAdminEarningsPool' : ActorMethod<[], bigint>,
   'getAdminStats' : ActorMethod<[], AdminStats>,
   'getAffiliateAccount' : ActorMethod<
     [Principal],
@@ -189,27 +211,33 @@ export interface _SERVICE {
   >,
   'getAllDeals' : ActorMethod<[], Array<Deal>>,
   'getAllKyc' : ActorMethod<[], Array<KycRecord>>,
+  'getAllPurchaseClaims' : ActorMethod<[], Array<PersistentPurchaseClaim>>,
   'getAllTransactions' : ActorMethod<[], Array<Transaction>>,
   'getAllUsers' : ActorMethod<[], Array<User>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [User]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getLeaderboard' : ActorMethod<[], Array<LeaderboardEntry>>,
   'getMessages' : ActorMethod<[], Array<Message>>,
   'getMyKyc' : ActorMethod<[], [] | [KycRecord]>,
+  'getMyPurchaseClaims' : ActorMethod<[], Array<PersistentPurchaseClaim>>,
   'getTransactionStatusSummary' : ActorMethod<
     [string],
     [] | [TransactionStatusSummary]
   >,
   'getTransactions' : ActorMethod<[], Array<Transaction>>,
   'getUser' : ActorMethod<[], [] | [User]>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [User]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'register' : ActorMethod<[string, string, string, [] | [string]], undefined>,
   'rejectKyc' : ActorMethod<[Principal, string], undefined>,
+  'rejectPurchaseClaim' : ActorMethod<[bigint, string], undefined>,
   'rejectWithdrawal' : ActorMethod<[bigint], undefined>,
   'requestWithdrawal' : ActorMethod<[bigint], bigint>,
   'saveAdminAffiliateSettings' : ActorMethod<
     [PersistentAdminAffiliateSettings],
     bigint
   >,
+  'saveCallerUserProfile' : ActorMethod<[User], undefined>,
   'setAdmin' : ActorMethod<[Principal], undefined>,
   'submitKyc' : ActorMethod<[KycDocType, string], undefined>,
   'trackShare' : ActorMethod<[bigint], undefined>,

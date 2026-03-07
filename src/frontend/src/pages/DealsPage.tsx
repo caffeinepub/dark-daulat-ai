@@ -14,7 +14,11 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Deal } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { useGetActiveDeals, useTrackShare } from "../hooks/useQueries";
+import {
+  useCreateTrackingLink,
+  useGetActiveDeals,
+  useTrackShare,
+} from "../hooks/useQueries";
 
 // Platform detection helper
 function getPlatform(deal: Deal): { name: string; color: string; bg: string } {
@@ -932,17 +936,46 @@ function formatINR(val: bigint | number) {
 
 function DealCard({ deal, index }: { deal: Deal; index: number }) {
   const trackShare = useTrackShare();
+  const createTrackingLink = useCreateTrackingLink();
+  const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
 
   const platform = getPlatform(deal);
 
   const handleShare = async () => {
+    // Create tracking link first
+    let trackingCode = "";
+    try {
+      trackingCode = await createTrackingLink.mutateAsync(deal.id);
+    } catch {
+      // If tracking link creation fails, continue without it
+    }
+
+    // Also track the share
     try {
       await trackShare.mutateAsync(deal.id);
     } catch {
       // Continue even if tracking fails
     }
-    const message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein!\n\nAbhi kharido: ${deal.affiliateLink}\n\n✅ Dark Daulat AI ke through best deals milti hain!`;
+
+    // Build message with tracking code if available
+    let message: string;
+    if (trackingCode) {
+      message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein!\n\n🛒 Yahan se kharidein: ${deal.affiliateLink}\n\n🏷️ Mere tracking code se khareedein: *${trackingCode}*\n\n✅ Dark Daulat AI ke through best deals milti hain!`;
+      toast.success(
+        "Tracking link bana! 'Meri Claims' mein jaake purchase confirm karo.",
+        {
+          duration: 4000,
+          action: {
+            label: "Claims Dekho",
+            onClick: () => navigate({ to: "/my-claims" }),
+          },
+        },
+      );
+    } else {
+      message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein!\n\nAbhi kharido: ${deal.affiliateLink}\n\n✅ Dark Daulat AI ke through best deals milti hain!`;
+    }
+
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -964,9 +997,8 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
     }
   };
 
-  const commissionAmount = Math.floor(
-    (Number(deal.price) * Number(deal.commissionPercent)) / 100,
-  );
+  // User earns 2% of purchase price (admin gets 3%, total 5% commission split)
+  const userEarning = Math.floor((Number(deal.price) * 2) / 100);
   const hasImage = deal.imageUrl && deal.imageUrl.trim() !== "" && !imgError;
 
   return (
@@ -1075,7 +1107,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           )}
         </div>
 
-        {/* Commission amount */}
+        {/* Commission amount - user's 2% share */}
         <div
           className="rounded-lg px-2 py-1 flex items-center gap-1"
           style={{
@@ -1087,7 +1119,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
             className="text-xs font-semibold"
             style={{ color: "oklch(0.70 0.18 145)" }}
           >
-            ₹{formatINR(commissionAmount)} Commission
+            ₹{formatINR(userEarning)} Aapko milega (2%)
           </span>
         </div>
 
@@ -1111,7 +1143,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           <button
             type="button"
             onClick={handleShare}
-            disabled={trackShare.isPending}
+            disabled={trackShare.isPending || createTrackingLink.isPending}
             data-ocid={`deals.share_button.${index + 1}`}
             className="flex-1 h-9 rounded-xl flex items-center justify-center gap-1 text-xs font-semibold transition-all active:scale-95"
             style={{
@@ -1121,7 +1153,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
               boxShadow: "0 2px 10px oklch(0.78 0.12 85 / 0.3)",
             }}
           >
-            {trackShare.isPending ? (
+            {trackShare.isPending || createTrackingLink.isPending ? (
               <Loader2 size={11} className="animate-spin" />
             ) : (
               <Share2 size={11} />
