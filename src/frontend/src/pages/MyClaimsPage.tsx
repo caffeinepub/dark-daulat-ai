@@ -374,24 +374,68 @@ function ConfirmPurchaseForm({
 
       {/* ── Fraud Prevention Banner ── */}
       <div
-        className="rounded-xl p-3 flex items-start gap-2.5"
+        className="rounded-xl p-3 space-y-2"
         style={{
           background: "oklch(0.55 0.14 250 / 0.10)",
           border: "1px solid oklch(0.55 0.14 250 / 0.4)",
         }}
       >
-        <ShieldCheck
-          size={15}
-          className="shrink-0 mt-0.5"
-          style={{ color: "oklch(0.65 0.14 250)" }}
-        />
-        <p
-          className="text-xs leading-relaxed"
-          style={{ color: "oklch(0.68 0.12 250)" }}
+        <div className="flex items-center gap-2">
+          <ShieldCheck
+            size={15}
+            className="shrink-0"
+            style={{ color: "oklch(0.65 0.14 250)" }}
+          />
+          <p
+            className="text-xs font-bold"
+            style={{ color: "oklch(0.72 0.14 250)" }}
+          >
+            🛡️ Fraud Prevention — Zaroori Shuroot
+          </p>
+        </div>
+        <ul
+          className="text-xs space-y-1.5 pl-1"
+          style={{ color: "oklch(0.65 0.10 250)" }}
         >
-          🛡️ <strong>Fraud Prevention:</strong> Order confirm hone ka screenshot
-          zaroori hai. Bina proof ke commission nahi milega.
-        </p>
+          <li className="flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">📸</span>
+            <span>
+              Order confirm hone ka{" "}
+              <strong style={{ color: "oklch(0.75 0.12 250)" }}>
+                screenshot zaroori hai
+              </strong>{" "}
+              — bina proof ke commission nahi milega.
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">🚫</span>
+            <span>
+              Purchase amount{" "}
+              <strong style={{ color: "oklch(0.75 0.12 250)" }}>
+                deal ki actual price se 2 guna se zyada nahi ho sakta
+              </strong>
+              .
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">💰</span>
+            <span>
+              Ek claim mein{" "}
+              <strong style={{ color: "oklch(0.75 0.12 250)" }}>
+                maximum ₹50,000
+              </strong>{" "}
+              tak hi allowed hai.
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">📅</span>
+            <span>
+              Roz ka daily commission limit{" "}
+              <strong style={{ color: "oklch(0.75 0.12 250)" }}>₹10,000</strong>{" "}
+              hai — is se zyada claim same din nahi hoga.
+            </span>
+          </li>
+        </ul>
       </div>
 
       {/* ── Order Screenshot Upload ── */}

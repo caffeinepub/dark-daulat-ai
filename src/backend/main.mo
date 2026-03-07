@@ -10,8 +10,11 @@ import Time "mo:core/Time";
 
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import MixinStorage "blob-storage/Mixin";
 
 actor {
+  include MixinStorage();
+
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
@@ -276,11 +279,8 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    
-    // Read existing user record
+
     let existingUser = users.get(caller);
-    
-    // Force preserve critical fields from existing record
     let protectedProfile : PersistentUser = {
       profile with
       isAdmin = switch (existingUser) {
@@ -308,7 +308,7 @@ actor {
         case (null) { caller.toText() };
       };
     };
-    
+
     users.add(caller, protectedProfile);
   };
 
@@ -395,7 +395,6 @@ actor {
     };
   };
 
-  // getUser (no authorization check - returns caller's own data)
   public query ({ caller }) func getUser() : async ?User {
     users.get(caller);
   };
@@ -427,7 +426,6 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be a user");
     };
-    // Users can only view their own account, admins can view any account
     if (caller != accountId and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own affiliate account");
     };
@@ -586,12 +584,10 @@ actor {
     };
   };
 
-  // Public access - anyone can view active deals
   public query ({ caller }) func getActiveDeals() : async [Deal] {
     deals.values().toArray().filter<Deal>(func(d) { d.isActive });
   };
 
-  // Public access - anyone can view all deals
   public query ({ caller }) func getAllDeals() : async [Deal] {
     deals.values().toArray();
   };
@@ -602,7 +598,6 @@ actor {
       Runtime.trap("Unauthorized: Only users can track shares");
     };
 
-    // Check if caller has already received share commission for this deal
     let dealIdText = dealId.toText();
     let notePattern = "deal: " # dealIdText;
     let allTxns = transactions.values().toArray();
@@ -612,7 +607,6 @@ actor {
       };
     };
 
-    // Update deal share count
     switch (deals.get(dealId)) {
       case (?deal) {
         let updatedDeal : PersistentDeal = {
@@ -620,10 +614,9 @@ actor {
         };
         deals.add(dealId, updatedDeal);
 
-        // Update user share count and add small commission
         switch (users.get(caller)) {
           case (?user) {
-            let shareCommission : Nat = 5; // Small commission for sharing
+            let shareCommission : Nat = 5;
             let updatedUser : PersistentUser = {
               user with
               shareCount = user.shareCount + 1;
@@ -631,7 +624,6 @@ actor {
             };
             users.add(caller, updatedUser);
 
-            // Create share transaction
             let txn : PersistentTransaction = {
               id = nextTransactionId;
               userId = caller;
@@ -651,7 +643,6 @@ actor {
     };
   };
 
-  // Public access - pure calculation function
   public query func calculateProfit(productPrice : Nat, commissionPercent : Nat) : async ProfitCalculation {
     let expectedEarnings = (productPrice * commissionPercent) / 100;
     let referralBonus = (expectedEarnings * 5) / 100;
@@ -666,13 +657,11 @@ actor {
     };
   };
 
-  // Transaction / Wallet Functions
   public shared ({ caller }) func requestWithdrawal(amount : Nat) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can request withdrawals");
     };
 
-    // Check KYC
     switch (kycStore.get(caller)) {
       case (null) { Runtime.trap("KYC complete karna zaroori hai withdrawal se pehle") };
       case (?kyc) {
@@ -692,13 +681,11 @@ actor {
           Runtime.trap("Insufficient balance");
         };
 
-        // Deduct from wallet balance
         let updatedUser : PersistentUser = {
           user with walletBalance = user.walletBalance - amount
         };
         users.add(caller, updatedUser);
 
-        // Create pending transaction
         let txn : PersistentTransaction = {
           id = nextTransactionId;
           userId = caller;
@@ -732,7 +719,6 @@ actor {
         };
         transactions.add(transactionId, updatedTxn);
 
-        // Update user withdrawn amount
         switch (users.get(txn.userId)) {
           case (?user) {
             let updatedUser : PersistentUser = {
@@ -763,7 +749,6 @@ actor {
         };
         transactions.add(transactionId, updatedTxn);
 
-        // Refund amount to wallet balance
         switch (users.get(txn.userId)) {
           case (?user) {
             let updatedUser : PersistentUser = {
@@ -790,11 +775,8 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view all transactions");
     };
-
     transactions.values().toArray();
   };
-
-  // Core Purchase Claim Methods
 
   public shared ({ caller }) func createTrackingLink(dealId : Nat) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -833,7 +815,7 @@ actor {
     };
   };
 
-  // FIX 2: confirmPurchase daily limit
+  // FIX 2: confirmPurchase daily limit + price cap
   public shared ({ caller }) func confirmPurchase(trackingCode : Text, purchaseAmount : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Sirf registered users hi purchase confirm kar sakte hain");
@@ -858,6 +840,16 @@ actor {
           Runtime.trap("Deal abhi inactive hai");
         };
 
+        // === NEW: Price cap checks ===
+        let maxAllowedAmount = deal.price * 2;
+        if (purchaseAmount > maxAllowedAmount) {
+          Runtime.trap("Purchase amount deal ki actual price se zyada nahi ho sakta. Maximum allowed: " # maxAllowedAmount.toText());
+        };
+        // Cap 2: Absolute maximum Rs.50,000 per claim
+        if (purchaseAmount > 50000) {
+          Runtime.trap("Ek claim mein maximum Rs.50,000 tak ki purchase amount allowed hai.");
+        };
+
         let commissionAmount = (purchaseAmount * deal.commissionPercent) / 100;
         let userCommissionAmount = (purchaseAmount * 2) / 100;
         let adminCommissionAmount = (purchaseAmount * 3) / 100;
@@ -874,23 +866,21 @@ actor {
         };
 
         if (totalTodayCommission + userCommissionAmount > 10000) {
-          Runtime.trap("Aaj ka daily limit (₹10,000) poora ho gaya. Kal dobara try karein.");
+          Runtime.trap("Aaj ka daily limit (Rs.10,000) poora ho gaya. Kal dobara try karein.");
         };
 
-        // Fully automatic processing
         let updatedClaim : PersistentPurchaseClaim = {
           claim with
           purchaseAmount;
           commissionAmount;
           userCommissionAmount;
           adminCommissionAmount;
-          status = #approved; // Automatically approved
+          status = #approved;
           confirmedAt = ?Time.now();
           reviewedAt = ?Time.now();
         };
         purchaseClaims.add(claimId, updatedClaim);
 
-        // Credit 2% to user
         switch (users.get(claim.userId)) {
           case (null) { Runtime.trap("User nahi mila"); };
           case (?user) {
@@ -901,7 +891,6 @@ actor {
             };
             users.add(claim.userId, updatedUser);
 
-            // Add 3% to admin earnings pool
             adminEarningsPool += adminCommissionAmount;
 
             let txn : PersistentTransaction = {
@@ -916,7 +905,6 @@ actor {
             transactions.add(nextTransactionId, txn);
             nextTransactionId += 1;
 
-            // Credit referral bonus if exists
             switch (user.referredBy) {
               case (null) {};
               case (?referralCode) {
@@ -976,12 +964,11 @@ actor {
           case (?user) {
             let updatedUser : PersistentUser = {
               user with
-              walletBalance = user.walletBalance + claim.userCommissionAmount; // Credit 2% to user
-              totalEarnings = user.totalEarnings + claim.userCommissionAmount; // Credit 2% to user
+              walletBalance = user.walletBalance + claim.userCommissionAmount;
+              totalEarnings = user.totalEarnings + claim.userCommissionAmount;
             };
             users.add(claim.userId, updatedUser);
 
-            // Add 3% to admin earnings pool
             adminEarningsPool += claim.adminCommissionAmount;
 
             let txn : PersistentTransaction = {
@@ -1092,7 +1079,6 @@ actor {
         };
         users.add(userId, updatedUser);
 
-        // Create commission transaction
         let txn : PersistentTransaction = {
           id = nextTransactionId;
           userId;
@@ -1105,10 +1091,8 @@ actor {
         transactions.add(nextTransactionId, txn);
         nextTransactionId += 1;
 
-        // Credit referral bonus to referrer if exists
         switch (user.referredBy) {
           case (?referralCode) {
-            // Find referrer by referral code
             let allUsers = users.entries().toArray();
             for ((principal, u) in allUsers.vals()) {
               if (u.referralCode == referralCode) {
@@ -1120,7 +1104,6 @@ actor {
                 };
                 users.add(principal, updatedReferrer);
 
-                // Create referral transaction
                 let refTxn : PersistentTransaction = {
                   id = nextTransactionId;
                   userId = principal;
@@ -1142,7 +1125,6 @@ actor {
     };
   };
 
-  // Referral Leaderboard - Public access
   public query func getLeaderboard() : async [LeaderboardEntry] {
     let allUsers = users.entries().toArray();
     let sorted = allUsers.sort(
@@ -1162,7 +1144,6 @@ actor {
     );
   };
 
-  // Admin Functions
   public shared ({ caller }) func setAdmin(user : Principal) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can set other admins");
@@ -1219,7 +1200,6 @@ actor {
     };
   };
 
-  // Chatbot Functions
   public shared ({ caller }) func addMessage(message : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can send messages");
@@ -1231,7 +1211,6 @@ actor {
       timestamp = Time.now();
     };
 
-    // Simple rule-based assistant reply in Hindi
     let assistantReply = if (message.contains(#text "help")) {
       "मैं आपकी कैसे मदद कर सकता हूं?";
     } else if (message.contains(#text "deal")) {
@@ -1278,7 +1257,6 @@ actor {
     messages.remove(caller);
   };
 
-  // Admin Affiliate Settings
   public shared ({ caller }) func saveAdminAffiliateSettings(settings : PersistentAdminAffiliateSettings) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can save affiliate settings");
@@ -1305,7 +1283,6 @@ actor {
     adminSettings.values().toArray();
   };
 
-  // Admin Commission Summary
   public shared ({ caller }) func updateAdminCommissionSummary(adminName : Text, adminTotal : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update commission summary");
@@ -1325,7 +1302,6 @@ actor {
     adminCommissionSummary.get(adminName);
   };
 
-  // Affiliate Account Stats
   public shared ({ caller }) func updateAffiliateAccountStats(
     statsId : Text,
     totalAccounts : Nat,
@@ -1359,7 +1335,6 @@ actor {
     affiliateAccountStats.get(statsId);
   };
 
-  // Transaction Status Summary
   public shared ({ caller }) func updateTransactionStatusSummary(
     summaryId : Text,
     totalTransactions : Nat,
@@ -1409,7 +1384,6 @@ actor {
         };
         users.add(userId, updatedUser);
 
-        // Create adjustment transaction
         let txn : PersistentTransaction = {
           id = nextTransactionId;
           userId;
@@ -1426,14 +1400,11 @@ actor {
     };
   };
 
-  // KYC functions
   public shared ({ caller }) func submitKyc(docType : KycDocType, docNumber : Text) : async () {
-    // Only users allowed to submit KYC
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can submit KYC");
     };
 
-    // Validate document number
     switch (docType) {
       case (#aadhaar) {
         if (docNumber.size() != 12) {
@@ -1447,7 +1418,6 @@ actor {
       };
     };
 
-    // Check for existing approved KYC
     switch (kycStore.get(caller)) {
       case (?existing) {
         if (existing.status == #approved) {
@@ -1457,7 +1427,6 @@ actor {
       case (null) {};
     };
 
-    // Create new KYC record
     let newKyc : PersistentKyc = {
       docType;
       docNumber;
@@ -1470,7 +1439,6 @@ actor {
     kycStore.add(caller, newKyc);
   };
 
-  // Anyone can get their own KYC
   public query ({ caller }) func getMyKyc() : async ?KycRecord {
     kycStore.get(caller);
   };

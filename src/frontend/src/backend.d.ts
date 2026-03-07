@@ -39,21 +39,6 @@ export interface User {
     withdrawnAmount: bigint;
     walletBalance: bigint;
 }
-export interface PersistentAdminAffiliateSettings {
-    id: bigint;
-    username?: string;
-    websiteUrl: string;
-    createdAt: Time;
-    createdBy?: Principal;
-    lastUpdated?: Time;
-    lastUpdatedBy?: Principal;
-    apiKey?: string;
-    notes: string;
-    affiliateId: string;
-    contactEmail?: string;
-    supportPhone?: string;
-    platformName: string;
-}
 export interface PersistentPurchaseClaim {
     id: bigint;
     status: PurchaseClaimStatus;
@@ -69,9 +54,20 @@ export interface PersistentPurchaseClaim {
     adminCommissionAmount: bigint;
     commissionAmount: bigint;
 }
-export interface AdminCommissionSummary {
-    adminTotal: bigint;
-    lastUpdated: Time;
+export interface PersistentAdminAffiliateSettings {
+    id: bigint;
+    username?: string;
+    websiteUrl: string;
+    createdAt: Time;
+    createdBy?: Principal;
+    lastUpdated?: Time;
+    lastUpdatedBy?: Principal;
+    apiKey?: string;
+    notes: string;
+    affiliateId: string;
+    contactEmail?: string;
+    supportPhone?: string;
+    platformName: string;
 }
 export interface Transaction {
     id: bigint;
@@ -81,6 +77,10 @@ export interface Transaction {
     note: string;
     timestamp: Time;
     amount: bigint;
+}
+export interface AdminCommissionSummary {
+    adminTotal: bigint;
+    lastUpdated: Time;
 }
 export interface AdminStats {
     totalPendingWithdrawals: bigint;
@@ -121,16 +121,16 @@ export interface Deal {
     affiliateLink: string;
     price: bigint;
 }
-export interface Message {
-    role: MessageRole;
-    message: string;
-    timestamp: Time;
-}
 export interface ProfitCalculation {
     adminCut: bigint;
     expectedEarnings: bigint;
     referralBonus: bigint;
     netProfit: bigint;
+}
+export interface Message {
+    role: MessageRole;
+    message: string;
+    timestamp: Time;
 }
 export interface TransactionStatusSummary {
     pendingCount: bigint;
