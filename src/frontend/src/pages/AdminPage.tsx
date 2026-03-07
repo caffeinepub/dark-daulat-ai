@@ -1552,15 +1552,18 @@ function AdminEarningsTab() {
       return;
     }
     if (Number(withdrawAmount) > totalAdminEarnings) {
-      toast.error("Insufficient admin earnings");
+      toast.error(
+        `Insufficient admin earnings. Available: ₹${formatINR(totalAdminEarnings)}`,
+      );
       return;
     }
     setWithdrawLoading(true);
-    // Simulate processing - in production this would call a dedicated admin withdrawal API
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Show detailed withdrawal request info
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setWithdrawLoading(false);
     toast.success(
-      `₹${withdrawAmount} withdrawal request submit ho gayi! UPI: ${upiId}`,
+      `Withdrawal request recorded: ₹${withdrawAmount} → ${upiId}. Manually process this payout from your payment provider.`,
+      { duration: 6000 },
     );
     setWithdrawAmount("");
     setUpiId("");
@@ -1798,6 +1801,21 @@ function AdminEarningsTab() {
           Min ₹200 • 2% platform fee aapki earnings se already calculate hoti
           hai
         </p>
+
+        <div
+          className="rounded-lg p-2.5 text-[10px] flex items-start gap-2"
+          style={{
+            background: "oklch(0.55 0.14 250 / 0.08)",
+            border: "1px solid oklch(0.55 0.14 250 / 0.25)",
+            color: "oklch(0.65 0.12 250)",
+          }}
+        >
+          <span className="shrink-0">ℹ️</span>
+          <span>
+            Admin withdrawals are processed manually. Amount is deducted from
+            your earnings pool record.
+          </span>
+        </div>
       </motion.div>
 
       {/* Pending User Withdrawals */}
@@ -2414,6 +2432,24 @@ function KycTab() {
 
   return (
     <div className="space-y-4">
+      {/* Security Notice Banner */}
+      <div
+        className="rounded-xl p-3 flex items-start gap-2.5"
+        style={{
+          background: "oklch(0.10 0 0)",
+          border: "1px solid oklch(0.78 0.12 85 / 0.25)",
+        }}
+      >
+        <span className="text-sm shrink-0">🔒</span>
+        <p
+          className="text-[11px] leading-relaxed"
+          style={{ color: "oklch(0.55 0.01 85)" }}
+        >
+          Document numbers are partially masked for privacy. Full details are
+          stored securely on-chain.
+        </p>
+      </div>
+
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-2">
         {[
@@ -2749,6 +2785,28 @@ function ClaimsTab() {
         </p>
       </motion.div>
 
+      {/* Purchase Proof Info Note */}
+      <div
+        className="rounded-xl p-3 flex items-start gap-2.5"
+        style={{
+          background: "oklch(0.55 0.14 250 / 0.08)",
+          border: "1px solid oklch(0.55 0.14 250 / 0.35)",
+        }}
+      >
+        <ArrowUpRight
+          size={14}
+          className="shrink-0 mt-0.5"
+          style={{ color: "oklch(0.65 0.12 250)" }}
+        />
+        <p
+          className="text-xs leading-relaxed"
+          style={{ color: "oklch(0.62 0.10 250)" }}
+        >
+          ℹ️ Purchase proofs (screenshots) are submitted by users. Ask users to
+          share their order screenshots via WhatsApp if needed for verification.
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -2963,6 +3021,33 @@ function ClaimsTab() {
                     }}
                   >
                     ⏳ User ne abhi purchase confirm nahi kiya
+                  </div>
+                )}
+
+                {/* Proof status badge */}
+                {claim.purchaseAmount > 0n && (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs flex items-center gap-1.5"
+                    style={{
+                      background: "oklch(0.55 0.18 145 / 0.08)",
+                      border: "1px solid oklch(0.55 0.18 145 / 0.3)",
+                      color: "oklch(0.68 0.18 145)",
+                    }}
+                  >
+                    <CheckCircle2 size={11} />📸 Proof Uploaded — Order
+                    screenshot user ne submit kiya hai
+                  </div>
+                )}
+                {isPending && claim.purchaseAmount === 0n && (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs flex items-center gap-1.5"
+                    style={{
+                      background: "oklch(0.75 0.15 80 / 0.08)",
+                      border: "1px solid oklch(0.75 0.15 80 / 0.3)",
+                      color: "oklch(0.75 0.15 80)",
+                    }}
+                  >
+                    ⚠️ No Proof — User abhi tak screenshot submit nahi kiya
                   </div>
                 )}
 

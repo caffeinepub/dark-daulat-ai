@@ -3,10 +3,12 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  Camera,
   CheckCircle2,
   ClipboardList,
   Copy,
   Loader2,
+  ShieldCheck,
   ShoppingBag,
   Wallet,
   XCircle,
@@ -97,10 +99,60 @@ function ConfirmPurchaseForm({
   const confirmPurchase = useConfirmPurchase();
   const [submitted, setSubmitted] = useState(false);
   const [finalUserCommission, setFinalUserCommission] = useState(0);
+  const [isLargeClaim, setIsLargeClaim] = useState(false);
+
+  // ── Proof screenshot state ──
+  const [proofImage, setProofImage] = useState<string | null>(null);
+  const [proofImageName, setProofImageName] = useState("");
+  const [proofError, setProofError] = useState("");
 
   // Commission split: user gets 2%, admin gets 3% of purchaseAmount
   const userCommission = amount ? Math.floor((Number(amount) * 2) / 100) : 0;
   const adminCommission = amount ? Math.floor((Number(amount) * 3) / 100) : 0;
+
+  // ── Image compress helper ──
+  const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("File size 3MB se zyada nahi hona chahiye");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Sirf image files allowed hain");
+      return;
+    }
+    setProofImageName(file.name);
+    setProofError("");
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 1024;
+        const maxH = 768;
+        let { width, height } = img;
+        if (width > maxW) {
+          height = Math.floor((height * maxW) / width);
+          width = maxW;
+        }
+        if (height > maxH) {
+          width = Math.floor((width * maxH) / height);
+          height = maxH;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL("image/jpeg", 0.8);
+        setProofImage(compressed);
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async () => {
     const amt = Number(amount);
@@ -108,6 +160,25 @@ function ConfirmPurchaseForm({
       toast.error("Sahi amount daalo (₹1 se zyada hona chahiye)");
       return;
     }
+    // Proof is required
+    if (!proofImage) {
+      setProofError(
+        "Order ka screenshot zaroori hai -- fraud prevention ke liye",
+      );
+      return;
+    }
+    // Warn for large claims
+    if (amt > 5000) {
+      toast.warning(
+        "₹5000 se zyada ke claims ke liye admin approval zaroori hai. Commission pending rahega.",
+      );
+    }
+    const largeClaim = amt > 5000;
+    setIsLargeClaim(largeClaim);
+
+    // Store proof screenshot in localStorage keyed by tracking code
+    localStorage.setItem(`claim_proof_${claim.trackingCode}`, proofImage);
+
     try {
       await confirmPurchase.mutateAsync({
         trackingCode: claim.trackingCode,
@@ -115,7 +186,13 @@ function ConfirmPurchaseForm({
       });
       setFinalUserCommission(Math.floor((amt * 2) / 100));
       setSubmitted(true);
-      toast.success("🎉 Commission turant wallet mein jama ho gayi!");
+      if (largeClaim) {
+        toast.success(
+          "Claim submit ho gayi! ₹5000 se zyada hai, admin approval ke baad wallet mein aayega.",
+        );
+      } else {
+        toast.success("🎉 Commission turant wallet mein jama ho gayi!");
+      }
     } catch (err) {
       toast.error(`Confirm fail hua: ${String(err).slice(0, 80)}`);
     }
@@ -154,18 +231,35 @@ function ConfirmPurchaseForm({
         <div>
           <p
             className="text-base font-bold"
-            style={{ color: "oklch(0.72 0.20 145)" }}
+            style={{
+              color: isLargeClaim
+                ? "oklch(0.82 0.15 75)"
+                : "oklch(0.72 0.20 145)",
+            }}
           >
-            🎉 Commission Wallet Mein Aa Gayi!
+            {isLargeClaim
+              ? "Claim Submit Ho Gayi! ⏳"
+              : "🎉 Commission Wallet Mein Aa Gayi!"}
           </p>
-          <p
-            className="text-sm mt-1 font-semibold"
-            style={{ color: "oklch(0.82 0.05 85)" }}
-          >
-            ₹{formatINR(finalUserCommission)} aapke wallet mein jama ho gaya!
-          </p>
+          {isLargeClaim ? (
+            <p
+              className="text-sm mt-1"
+              style={{ color: "oklch(0.62 0.01 85)" }}
+            >
+              Admin review ke baad wallet mein credit hoga
+            </p>
+          ) : (
+            <p
+              className="text-sm mt-1 font-semibold"
+              style={{ color: "oklch(0.82 0.05 85)" }}
+            >
+              ₹{formatINR(finalUserCommission)} aapke wallet mein jama ho gaya!
+            </p>
+          )}
           <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.01 85)" }}>
-            Wallet page pe check karo.
+            {isLargeClaim
+              ? "72 ghante ke andar update milega."
+              : "Wallet page pe check karo."}
           </p>
         </div>
         <div className="flex gap-2 justify-center">
@@ -277,6 +371,108 @@ function ConfirmPurchaseForm({
           </div>
         </div>
       )}
+
+      {/* ── Fraud Prevention Banner ── */}
+      <div
+        className="rounded-xl p-3 flex items-start gap-2.5"
+        style={{
+          background: "oklch(0.55 0.14 250 / 0.10)",
+          border: "1px solid oklch(0.55 0.14 250 / 0.4)",
+        }}
+      >
+        <ShieldCheck
+          size={15}
+          className="shrink-0 mt-0.5"
+          style={{ color: "oklch(0.65 0.14 250)" }}
+        />
+        <p
+          className="text-xs leading-relaxed"
+          style={{ color: "oklch(0.68 0.12 250)" }}
+        >
+          🛡️ <strong>Fraud Prevention:</strong> Order confirm hone ka screenshot
+          zaroori hai. Bina proof ke commission nahi milega.
+        </p>
+      </div>
+
+      {/* ── Order Screenshot Upload ── */}
+      <div className="space-y-2">
+        <label
+          htmlFor={`proof-upload-${claim.trackingCode}`}
+          className="text-xs font-semibold block"
+          style={{ color: "oklch(0.82 0.05 85)" }}
+        >
+          📸 Order Screenshot Upload Karo *
+        </label>
+
+        <label
+          htmlFor={`proof-upload-${claim.trackingCode}`}
+          data-ocid="claims.upload_button"
+          className="flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 cursor-pointer transition-all"
+          style={{
+            border: `2px dashed ${proofError ? "oklch(0.62 0.22 25 / 0.7)" : proofImage ? "oklch(0.55 0.18 145 / 0.7)" : "oklch(0.78 0.12 85 / 0.5)"}`,
+            background: proofImage
+              ? "oklch(0.55 0.18 145 / 0.07)"
+              : "oklch(0.10 0 0 / 0.5)",
+          }}
+        >
+          <Camera
+            size={18}
+            style={{
+              color: proofImage
+                ? "oklch(0.68 0.18 145)"
+                : "oklch(0.68 0.10 85)",
+            }}
+          />
+          <p
+            className="text-xs font-semibold"
+            style={{
+              color: proofImage
+                ? "oklch(0.72 0.18 145)"
+                : "oklch(0.68 0.08 85)",
+            }}
+          >
+            {proofImage
+              ? `✅ ${proofImageName}`
+              : "Order Screenshot Upload Karo"}
+          </p>
+          <p className="text-[10px]" style={{ color: "oklch(0.45 0.01 85)" }}>
+            JPG, PNG — max 3MB
+          </p>
+          <input
+            id={`proof-upload-${claim.trackingCode}`}
+            type="file"
+            accept="image/*"
+            onChange={handleProofUpload}
+            className="hidden"
+          />
+        </label>
+
+        {/* Error */}
+        {proofError && (
+          <p
+            data-ocid="claims.proof_error_state"
+            className="text-xs flex items-center gap-1"
+            style={{ color: "oklch(0.68 0.22 25)" }}
+          >
+            ⚠️ {proofError}
+          </p>
+        )}
+
+        {/* Thumbnail preview */}
+        {proofImage && (
+          <motion.img
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            src={proofImage}
+            alt="Order screenshot preview"
+            className="w-full max-h-32 object-contain rounded-xl"
+            style={{
+              border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+              background: "oklch(0.10 0 0)",
+            }}
+          />
+        )}
+      </div>
 
       <div className="flex gap-2">
         <Button
@@ -537,6 +733,16 @@ function ClaimHistoryCard({
             wallet mein aa gaya!
           </div>
         )}
+
+      {/* Proof submitted note for confirmed claims */}
+      {claim.purchaseAmount > 0n && (
+        <div
+          className="text-[10px] mb-2 flex items-center gap-1"
+          style={{ color: "oklch(0.62 0.14 145)" }}
+        >
+          ✅ Proof submitted
+        </div>
+      )}
 
       {/* Rejected reason */}
       {statusStr === "rejected" && claim.rejectionReason && (

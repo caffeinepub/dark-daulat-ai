@@ -812,7 +812,9 @@ export default function ProfilePage() {
                         className="text-[10px]"
                         style={{ color: "oklch(0.45 0.01 85)" }}
                       >
-                        {entry.referralCode}
+                        {entry.referralCode.length > 8
+                          ? `${entry.referralCode.slice(0, 8)}...`
+                          : entry.referralCode}
                       </span>
                     </div>
                     <span

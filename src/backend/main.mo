@@ -271,11 +271,45 @@ actor {
     users.get(user);
   };
 
+  // FIX 1: saveCallerUserProfile protection
   public shared ({ caller }) func saveCallerUserProfile(profile : User) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    users.add(caller, profile);
+    
+    // Read existing user record
+    let existingUser = users.get(caller);
+    
+    // Force preserve critical fields from existing record
+    let protectedProfile : PersistentUser = {
+      profile with
+      isAdmin = switch (existingUser) {
+        case (?existing) { existing.isAdmin };
+        case (null) { false };
+      };
+      walletBalance = switch (existingUser) {
+        case (?existing) { existing.walletBalance };
+        case (null) { 0 };
+      };
+      totalEarnings = switch (existingUser) {
+        case (?existing) { existing.totalEarnings };
+        case (null) { 0 };
+      };
+      pendingEarnings = switch (existingUser) {
+        case (?existing) { existing.pendingEarnings };
+        case (null) { 0 };
+      };
+      withdrawnAmount = switch (existingUser) {
+        case (?existing) { existing.withdrawnAmount };
+        case (null) { 0 };
+      };
+      referralCode = switch (existingUser) {
+        case (?existing) { existing.referralCode };
+        case (null) { caller.toText() };
+      };
+    };
+    
+    users.add(caller, protectedProfile);
   };
 
   // OTP Functions
@@ -562,9 +596,20 @@ actor {
     deals.values().toArray();
   };
 
+  // FIX 3: trackShare per-deal-per-user once
   public shared ({ caller }) func trackShare(dealId : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can track shares");
+    };
+
+    // Check if caller has already received share commission for this deal
+    let dealIdText = dealId.toText();
+    let notePattern = "deal: " # dealIdText;
+    let allTxns = transactions.values().toArray();
+    for (txn in allTxns.vals()) {
+      if (txn.userId == caller and txn.transactionType == #share and txn.note.contains(#text notePattern)) {
+        Runtime.trap("Aap pehle se is deal ko share kar chuke hain aur share commission le chuke hain.");
+      };
     };
 
     // Update deal share count
@@ -593,7 +638,7 @@ actor {
               amount = shareCommission;
               transactionType = #share;
               status = #approved;
-              note = "Share commission for deal: " # dealId.toText();
+              note = "Share commission for deal: " # dealIdText;
               timestamp = Time.now();
             };
             transactions.add(nextTransactionId, txn);
@@ -788,7 +833,7 @@ actor {
     };
   };
 
-  // # CHANGE: Make confirmPurchase fully automatic
+  // FIX 2: confirmPurchase daily limit
   public shared ({ caller }) func confirmPurchase(trackingCode : Text, purchaseAmount : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Sirf registered users hi purchase confirm kar sakte hain");
@@ -816,6 +861,21 @@ actor {
         let commissionAmount = (purchaseAmount * deal.commissionPercent) / 100;
         let userCommissionAmount = (purchaseAmount * 2) / 100;
         let adminCommissionAmount = (purchaseAmount * 3) / 100;
+
+        // Check daily limit: count commission received today (last 24 hours)
+        let now = Time.now();
+        let oneDayAgo = now - (24 * 60 * 60 * 1_000_000_000);
+        let allTxns = transactions.values().toArray();
+        var totalTodayCommission : Nat = 0;
+        for (txn in allTxns.vals()) {
+          if (txn.userId == caller and txn.transactionType == #commission and txn.timestamp >= oneDayAgo) {
+            totalTodayCommission += txn.amount;
+          };
+        };
+
+        if (totalTodayCommission + userCommissionAmount > 10000) {
+          Runtime.trap("Aaj ka daily limit (₹10,000) poora ho gaya. Kal dobara try karein.");
+        };
 
         // Fully automatic processing
         let updatedClaim : PersistentPurchaseClaim = {

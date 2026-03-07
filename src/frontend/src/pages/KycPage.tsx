@@ -3,7 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   ArrowLeft,
+  Camera,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -30,6 +32,10 @@ export default function KycPage() {
   const [docNumber, setDocNumber] = useState("");
   const [docError, setDocError] = useState("");
 
+  // ── Document photo upload state ──
+  const [docImage, setDocImage] = useState<string | null>(null); // base64
+  const [docImageName, setDocImageName] = useState("");
+
   // Auth guard
   useEffect(() => {
     if (!isInitializing && !identity) {
@@ -48,6 +54,56 @@ export default function KycPage() {
       }
     }
     return "";
+  };
+
+  // ── Image compress and convert to base64 ──
+  const handleDocImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size 2MB se zyada nahi hona chahiye");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Sirf image files allowed hain");
+      return;
+    }
+    setDocImageName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 800;
+        const maxH = 600;
+        let { width, height } = img;
+        if (width > maxW) {
+          height = Math.floor((height * maxW) / width);
+          width = maxW;
+        }
+        if (height > maxH) {
+          width = Math.floor((width * maxH) / height);
+          height = maxH;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL("image/jpeg", 0.75);
+        setDocImage(compressed);
+
+        // Save to localStorage keyed by principal
+        const principal = identity?.getPrincipal().toString() ?? "anonymous";
+        localStorage.setItem(`kyc_doc_image_${principal}`, compressed);
+        toast.success(
+          "Document photo save ho gayi! Admin review ke liye tayyar hai.",
+        );
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -561,6 +617,114 @@ export default function KycPage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* ── Document Photo Upload ─────────────────────── */}
+                <div className="space-y-2">
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: "oklch(0.82 0.05 85)" }}
+                  >
+                    📷 Document ki Photo Upload Karo (Recommended)
+                  </p>
+
+                  {/* Warning if no image */}
+                  {!docImage && (
+                    <div
+                      data-ocid="kyc.photo_warning"
+                      className="rounded-xl p-3 flex items-start gap-2.5"
+                      style={{
+                        background: "oklch(0.68 0.18 75 / 0.12)",
+                        border: "1px solid oklch(0.68 0.18 75 / 0.5)",
+                      }}
+                    >
+                      <AlertTriangle
+                        size={15}
+                        className="shrink-0 mt-0.5"
+                        style={{ color: "oklch(0.80 0.18 75)" }}
+                      />
+                      <p
+                        className="text-xs leading-relaxed"
+                        style={{ color: "oklch(0.78 0.15 75)" }}
+                      >
+                        Document photo upload karene se KYC jaldi approve hoti
+                        hai
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Upload area */}
+                  <label
+                    htmlFor="kyc-doc-photo"
+                    data-ocid="kyc.upload_button"
+                    className="flex flex-col items-center justify-center gap-2 rounded-xl p-4 cursor-pointer transition-all"
+                    style={{
+                      border: `2px dashed ${docImage ? "oklch(0.55 0.18 145 / 0.6)" : "oklch(0.78 0.12 85 / 0.5)"}`,
+                      background: docImage
+                        ? "oklch(0.55 0.18 145 / 0.06)"
+                        : "oklch(0.10 0 0 / 0.5)",
+                    }}
+                  >
+                    <Camera
+                      size={22}
+                      style={{
+                        color: docImage
+                          ? "oklch(0.68 0.18 145)"
+                          : "oklch(0.68 0.10 85)",
+                      }}
+                    />
+                    <p
+                      className="text-xs font-semibold"
+                      style={{
+                        color: docImage
+                          ? "oklch(0.72 0.18 145)"
+                          : "oklch(0.72 0.08 85)",
+                      }}
+                    >
+                      {docImage
+                        ? `✅ ${docImageName} — uploaded`
+                        : "Photo Upload Karo"}
+                    </p>
+                    <p
+                      className="text-[10px]"
+                      style={{ color: "oklch(0.45 0.01 85)" }}
+                    >
+                      JPG, PNG — max 2MB
+                    </p>
+                    <input
+                      id="kyc-doc-photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleDocImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Thumbnail preview */}
+                  {docImage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2"
+                    >
+                      <img
+                        src={docImage}
+                        alt="Document preview"
+                        className="w-full max-h-32 object-contain rounded-xl"
+                        style={{
+                          border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+                          background: "oklch(0.10 0 0)",
+                        }}
+                      />
+                      <p
+                        className="text-xs text-center"
+                        style={{ color: "oklch(0.65 0.15 145)" }}
+                      >
+                        ✅ Document photo uploaded. Admin review ke liye save ho
+                        gayi.
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
 
                 {/* Submit button */}
                 <Button

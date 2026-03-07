@@ -3,8 +3,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
+  Copy,
+  Eye,
+  EyeOff,
   Fingerprint,
   Info,
   Loader2,
@@ -80,17 +84,28 @@ export default function LoginPage() {
   type OtpStep = "form" | "otp";
   const [otpStep, setOtpStep] = useState<OtpStep>("form");
   const [otpCode, setOtpCode] = useState(""); // what user types
-  const [generatedOtp, setGeneratedOtp] = useState(""); // returned from backend (demo)
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0); // countdown for resend
 
-  // ── Countdown timer for OTP ──
+  // ── OTP "Show Once" state ──
+  const [shownOtp, setShownOtp] = useState<string | null>(null); // actual OTP returned from backend
+  const [otpRevealCountdown, setOtpRevealCountdown] = useState(0); // 30-second reveal timer
+  const [otpCopied, setOtpCopied] = useState(false);
+
+  // ── Countdown timer for OTP resend ──
   useEffect(() => {
     if (otpCountdown <= 0) return;
     const timer = setTimeout(() => setOtpCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [otpCountdown]);
+
+  // ── Countdown timer for OTP reveal (30 seconds) ──
+  useEffect(() => {
+    if (otpRevealCountdown <= 0) return;
+    const timer = setTimeout(() => setOtpRevealCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpRevealCountdown]);
 
   // If identity is already available (non-anonymous), we don't need the login button
   const isAlreadyLoggedIn =
@@ -149,15 +164,20 @@ export default function LoginPage() {
 
     setOtpLoading(true);
     try {
-      const otp = await generateOtpMutation.mutateAsync({
+      const generatedOtp = await generateOtpMutation.mutateAsync({
         email: email.trim(),
         mobile: mobile.trim(),
       });
-      setGeneratedOtp(otp);
+      // Store the returned OTP for "show once" display
+      setShownOtp(generatedOtp);
+      setOtpRevealCountdown(30); // Show OTP for 30 seconds
+      setOtpCode(generatedOtp); // Pre-fill OTP input for convenience
+      setOtpCopied(false);
       setOtpStep("otp");
-      setOtpCode("");
-      setOtpCountdown(600); // 10 minutes
-      toast.success("OTP generate ho gaya! Neeche dikh raha hai.");
+      setOtpCountdown(600); // 10 minutes expiry
+      toast.success(
+        "OTP generate ho gaya! Neeche dikha raha hai -- copy karo ya yaad kar lo.",
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`OTP generate karne mein error: ${msg.slice(0, 80)}`);
@@ -222,19 +242,34 @@ export default function LoginPage() {
     setOtpError("");
     setOtpLoading(true);
     try {
-      const otp = await generateOtpMutation.mutateAsync({
+      const newOtp = await generateOtpMutation.mutateAsync({
         email: email.trim(),
         mobile: mobile.trim(),
       });
-      setGeneratedOtp(otp);
-      setOtpCode("");
+      setShownOtp(newOtp);
+      setOtpRevealCountdown(30); // Show new OTP for 30 seconds
+      setOtpCode(newOtp); // Pre-fill
+      setOtpCopied(false);
       setOtpCountdown(600);
-      toast.success("Naya OTP generate ho gaya!");
+      toast.success("Naya OTP generate ho gaya! Neeche dekho.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`OTP bhejne mein error: ${msg.slice(0, 80)}`);
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  // ── Copy OTP helper ───────────────────────────────────────────────────────
+  const handleCopyOtp = async () => {
+    if (!shownOtp) return;
+    try {
+      await navigator.clipboard.writeText(shownOtp);
+      setOtpCopied(true);
+      toast.success("OTP copy ho gaya!");
+      setTimeout(() => setOtpCopied(false), 3000);
+    } catch {
+      toast.error("Copy nahi ho saka. Manually select karke copy karo.");
     }
   };
 
@@ -780,50 +815,160 @@ export default function LoginPage() {
                     </p>
                   </div>
 
-                  {/* OTP Display Card (demo mode) */}
-                  {generatedOtp && (
+                  {/* ── OTP "Show Once" Display ─────────────────────── */}
+                  {shownOtp && otpRevealCountdown > 0 ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-xl p-4 text-center"
+                      className="rounded-xl p-4 space-y-3"
                       style={{
                         background:
-                          "linear-gradient(135deg, oklch(0.14 0.04 85 / 0.8), oklch(0.18 0.06 85 / 0.6))",
-                        border: "1px solid oklch(0.78 0.12 85 / 0.5)",
-                        boxShadow: "0 4px 20px oklch(0.78 0.12 85 / 0.15)",
+                          "linear-gradient(135deg, oklch(0.14 0.06 30 / 0.8), oklch(0.16 0.08 35 / 0.6))",
+                        border: "2px solid oklch(0.70 0.20 35 / 0.7)",
+                        boxShadow: "0 4px 20px oklch(0.70 0.20 35 / 0.2)",
                       }}
                     >
-                      <p
-                        className="text-xs mb-2"
-                        style={{ color: "oklch(0.62 0.01 85)" }}
-                      >
-                        🔐 Aapka OTP (Demo Mode):
-                      </p>
-                      <p
-                        className="text-3xl font-bold font-mono tracking-[0.4em]"
+                      {/* Warning banner */}
+                      <div
+                        className="rounded-lg px-3 py-2 flex items-start gap-2"
                         style={{
-                          color: "oklch(0.86 0.14 85)",
-                          textShadow: "0 0 20px oklch(0.78 0.12 85 / 0.5)",
+                          background: "oklch(0.65 0.20 35 / 0.15)",
+                          border: "1px solid oklch(0.65 0.20 35 / 0.5)",
                         }}
                       >
-                        {generatedOtp}
-                      </p>
-                      <p
-                        className="text-[10px] mt-2"
-                        style={{ color: "oklch(0.52 0.01 85)" }}
-                      >
-                        Yeh OTP 10 minutes mein expire ho jaayega
-                      </p>
-                      {otpCountdown > 0 && (
+                        <Eye
+                          size={14}
+                          className="shrink-0 mt-0.5"
+                          style={{ color: "oklch(0.78 0.22 35)" }}
+                        />
                         <p
-                          className="text-xs mt-1 font-mono"
-                          style={{ color: "oklch(0.72 0.14 250)" }}
+                          className="text-xs font-semibold leading-snug"
+                          style={{ color: "oklch(0.82 0.20 35)" }}
                         >
-                          ⏱ {formatCountdown(otpCountdown)} baaki hai
+                          ⚠️ Yeh OTP SIRF ABHI dikha raha hai — copy kar lo ya
+                          yaad kar lo! Dobara nahi dikhega.
                         </p>
-                      )}
+                      </div>
+
+                      {/* OTP Display */}
+                      <div className="text-center space-y-2">
+                        <p
+                          className="text-xs font-semibold"
+                          style={{ color: "oklch(0.70 0.12 35)" }}
+                        >
+                          Aapka OTP:
+                        </p>
+                        <div
+                          className="inline-flex items-center gap-3 px-5 py-3 rounded-xl"
+                          style={{
+                            background: "oklch(0.10 0 0)",
+                            border: "2px dashed oklch(0.70 0.20 35 / 0.6)",
+                          }}
+                        >
+                          <span
+                            className="text-3xl font-bold font-mono tracking-[0.4em]"
+                            style={{ color: "oklch(0.88 0.20 35)" }}
+                          >
+                            {shownOtp}
+                          </span>
+                        </div>
+                        {/* Countdown */}
+                        <p
+                          className="text-xs"
+                          style={{ color: "oklch(0.65 0.15 35)" }}
+                        >
+                          ⏱ {otpRevealCountdown}s mein chhupaaya jaayega
+                        </p>
+                      </div>
+
+                      {/* Copy button */}
+                      <button
+                        type="button"
+                        onClick={handleCopyOtp}
+                        data-ocid="login.copy_otp_button"
+                        className="w-full h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                        style={{
+                          background: otpCopied
+                            ? "linear-gradient(135deg, oklch(0.45 0.18 145), oklch(0.60 0.20 145))"
+                            : "linear-gradient(135deg, oklch(0.60 0.20 35), oklch(0.72 0.22 40))",
+                          color: "oklch(0.96 0.01 85)",
+                          border: "none",
+                        }}
+                      >
+                        {otpCopied ? (
+                          <>
+                            <Check size={15} /> OTP Copy Ho Gaya!
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={15} /> OTP Copy Karo
+                          </>
+                        )}
+                      </button>
+
+                      {/* Note */}
+                      <p
+                        className="text-center text-[10px]"
+                        style={{ color: "oklch(0.52 0.05 35)" }}
+                      >
+                        💡 Yeh OTP aapke device par generate hua hai. Email ya
+                        SMS nahi aayega — yahan se copy karo.
+                      </p>
                     </motion.div>
-                  )}
+                  ) : shownOtp ? (
+                    /* OTP Hidden after 30 seconds */
+                    <div
+                      className="rounded-xl p-3 flex items-center gap-2.5"
+                      style={{
+                        background: "oklch(0.12 0 0)",
+                        border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+                      }}
+                    >
+                      <EyeOff
+                        size={15}
+                        style={{ color: "oklch(0.52 0.01 85)" }}
+                        className="shrink-0"
+                      />
+                      <div>
+                        <p
+                          className="text-xs font-semibold"
+                          style={{ color: "oklch(0.72 0.05 85)" }}
+                        >
+                          OTP chhupaaya gaya — enter karo
+                        </p>
+                        <p
+                          className="text-[10px]"
+                          style={{ color: "oklch(0.45 0.01 85)" }}
+                        >
+                          OTP input field mein already fill hai. Verify dabao.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* OTP Sent Info */}
+                  <div
+                    className="rounded-xl p-3 text-center"
+                    style={{
+                      background: "oklch(0.78 0.12 85 / 0.06)",
+                      border: "1px solid oklch(0.78 0.12 85 / 0.18)",
+                    }}
+                  >
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.68 0.08 85)" }}
+                    >
+                      📨 OTP yahan se copy karo — email/SMS nahi aayega
+                    </p>
+                    {otpCountdown > 0 && (
+                      <p
+                        className="text-xs mt-1 font-mono"
+                        style={{ color: "oklch(0.72 0.14 250)" }}
+                      >
+                        ⏱ {formatCountdown(otpCountdown)} mein expire hoga
+                      </p>
+                    )}
+                  </div>
 
                   {/* OTP Input */}
                   <div>
@@ -914,7 +1059,11 @@ export default function LoginPage() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={handleResendOtp}
+                      onClick={() => {
+                        setShownOtp(null);
+                        setOtpRevealCountdown(0);
+                        handleResendOtp();
+                      }}
                       disabled={otpLoading || otpCountdown > 540} // allow resend after 1 min
                       data-ocid="login.resend_otp_button"
                       className="flex-1 h-10 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-40"
@@ -933,6 +1082,8 @@ export default function LoginPage() {
                         setOtpStep("form");
                         setOtpCode("");
                         setOtpError("");
+                        setShownOtp(null);
+                        setOtpRevealCountdown(0);
                       }}
                       data-ocid="login.back_to_form_button"
                       className="flex-1 h-10 text-xs font-semibold rounded-xl flex items-center justify-center transition-opacity"
@@ -956,7 +1107,7 @@ export default function LoginPage() {
                       border: "1px solid oklch(0.78 0.12 85 / 0.1)",
                     }}
                   >
-                    📧 OTP {email} aur 📱 {mobile} ke liye generate hua
+                    📧 {email} | 📱 {mobile} — OTP oopar copy karo
                   </p>
                 </motion.div>
               )}
