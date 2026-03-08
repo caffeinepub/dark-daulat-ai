@@ -117,16 +117,34 @@ export default function LoginPage() {
     (loginError?.message?.includes("already authenticated") ||
       loginError?.message?.includes("User is already authenticated"));
 
-  // Show loading while initializing OR while identity confirmed but user query running
-  const isCheckingUser = isAlreadyLoggedIn && (userLoading || !userFetched);
+  // ── Timeout fallback: if checking user for >8s, force show registration form ──
+  const [checkTimeout, setCheckTimeout] = useState(false);
+  useEffect(() => {
+    if (!isAlreadyLoggedIn) {
+      setCheckTimeout(false);
+      return;
+    }
+    // If already fetched or already showing register, no need for timeout
+    if (userFetched || showRegister) return;
+    const timer = setTimeout(() => setCheckTimeout(true), 8000);
+    return () => clearTimeout(timer);
+  }, [isAlreadyLoggedIn, userFetched, showRegister]);
+
+  // Show loading while identity confirmed but user query still running (with timeout fallback)
+  const isCheckingUser =
+    isAlreadyLoggedIn &&
+    !checkTimeout &&
+    (userLoading || !userFetched) &&
+    !showRegister;
 
   // Core effect: when identity + user query are ready, decide what to show
   useEffect(() => {
     if (!isAlreadyLoggedIn) return;
     if (userLoading || !userFetched) return;
-    if (registerShownRef.current && showRegister) return;
+    // Don't re-trigger if already showing register
+    if (showRegister) return;
 
-    if (user && typeof user === "object" && "name" in user) {
+    if (user && typeof user === "object" && "name" in user && user.name) {
       navigate({ to: "/" });
     } else {
       registerShownRef.current = true;
@@ -142,7 +160,18 @@ export default function LoginPage() {
     showRegister,
   ]);
 
-  // ── Step 1: Send OTP ──────────────────────────────────────────────────────
+  // ── Timeout fallback effect: show registration form if stuck checking ──
+  useEffect(() => {
+    if (!checkTimeout) return;
+    if (showRegister) return;
+    // Try to refetch once before giving up and showing registration form
+    refetchUser().catch(() => {});
+    registerShownRef.current = true;
+    setShowRegister(true);
+    setRegisterError("");
+  }, [checkTimeout, showRegister, refetchUser]);
+
+  // ── Step 1: Send OTP (with direct registration fallback) ─────────────────
   const handleSendOtp = async () => {
     setRegisterError("");
     setOtpError("");
@@ -179,8 +208,33 @@ export default function LoginPage() {
         "OTP generate ho gaya! Neeche dikha raha hai -- copy karo ya yaad kar lo.",
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`OTP generate karne mein error: ${msg.slice(0, 80)}`);
+      // OTP generation failed — attempt direct registration as fallback
+      console.warn(
+        "OTP generation failed, attempting direct registration:",
+        err,
+      );
+      try {
+        await registerMutation.mutateAsync({
+          name: name.trim(),
+          email: email.trim(),
+          mobile: mobile.trim(),
+          referralCode: referralCode.trim() || null,
+        });
+        toast.success("Registration ho gayi! Welcome to Dark Daulat AI! 🎉");
+        setTimeout(() => navigate({ to: "/" }), 500);
+      } catch (regErr) {
+        const regMsg =
+          regErr instanceof Error ? regErr.message : String(regErr);
+        if (regMsg.includes("already registered")) {
+          toast.success("Aap already registered hain! Home pe ja rahe hain...");
+          setTimeout(() => navigate({ to: "/" }), 500);
+          return;
+        }
+        const displayMsg =
+          regMsg.length > 200 ? `${regMsg.substring(0, 200)}...` : regMsg;
+        setRegisterError(displayMsg);
+        toast.error("Registration fail hui. Dobara try karein.");
+      }
     } finally {
       setOtpLoading(false);
     }

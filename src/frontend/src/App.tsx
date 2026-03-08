@@ -93,15 +93,18 @@ function AppLayout() {
   const { identity, isInitializing } = useInternetIdentity();
   const navigate = useNavigate();
 
+  // An identity is considered "authenticated" only if it exists AND is NOT anonymous
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   // Guard: redirect to login if not authenticated (after initializing)
   useEffect(() => {
-    if (!isInitializing && !identity) {
+    if (!isInitializing && !isAuthenticated) {
       navigate({ to: "/login" });
     }
-  }, [identity, isInitializing, navigate]);
+  }, [isAuthenticated, isInitializing, navigate]);
 
-  // Show nothing while redirecting to avoid flash
-  if (!isInitializing && !identity) {
+  // Show nothing while initializing, or while about to redirect
+  if (isInitializing || (!isInitializing && !isAuthenticated)) {
     return null;
   }
 

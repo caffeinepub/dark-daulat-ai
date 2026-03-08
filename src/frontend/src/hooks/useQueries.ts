@@ -220,16 +220,19 @@ export function useRegister() {
         referralCode,
       });
       if (!actor) throw new Error("Actor not ready. Dobara try karein.");
-      // Backend register() signature: register(name, email, mobile, referralCode: string | null)
-      // Pass null directly — the ICP SDK handles optional Text encoding automatically
-      // ICP Candid: optional Text must be [] for None, [value] for Some
-      // Passing JS null directly causes "Failed to parse Candid" errors
-      // Pass referralCode directly as string | null — the ICP SDK encodes ?Text correctly
-      const refCode: string | null = referralCode?.trim()
-        ? referralCode.trim()
-        : null;
+      // ICP Candid ?Text must be encoded as [] (None) or [string] (Some)
+      // Using JS null directly causes "Invalid opt text argument" errors
+      // Using [] | [string] array format ensures correct Candid encoding
+      const refCode: [] | [string] = referralCode?.trim()
+        ? [referralCode.trim()]
+        : [];
       try {
-        await actor.register(name, email, mobile, refCode);
+        await actor.register(
+          name,
+          email,
+          mobile,
+          refCode as unknown as string | null,
+        );
       } catch (err) {
         console.error("[useRegister] Backend error:", err);
         // Extract meaningful error from Candid reject
