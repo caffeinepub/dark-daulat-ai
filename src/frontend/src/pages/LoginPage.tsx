@@ -293,7 +293,7 @@ export default function LoginPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "oklch(0.06 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         <div className="flex flex-col items-center gap-3">
           <Logo size="md" />
@@ -314,7 +314,7 @@ export default function LoginPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "oklch(0.06 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         <div className="flex flex-col items-center gap-3">
           <Logo size="md" />
@@ -340,7 +340,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
-      style={{ background: "oklch(0.06 0 0)" }}
+      style={{ background: "oklch(0.13 0.008 255)" }}
     >
       {/* Background decorative elements */}
       <div
@@ -592,8 +592,8 @@ export default function LoginPage() {
                         data-ocid="login.name_input"
                         className="h-11 rounded-xl"
                         style={{
-                          background: "oklch(0.10 0 0)",
-                          border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                          background: "oklch(0.20 0.010 255)",
+                          border: "1px solid oklch(0.30 0.015 255)",
                           color: "oklch(0.96 0.015 85)",
                         }}
                       />
@@ -616,8 +616,8 @@ export default function LoginPage() {
                         data-ocid="login.email_input"
                         className="h-11 rounded-xl"
                         style={{
-                          background: "oklch(0.10 0 0)",
-                          border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                          background: "oklch(0.20 0.010 255)",
+                          border: "1px solid oklch(0.30 0.015 255)",
                           color: "oklch(0.96 0.015 85)",
                         }}
                       />
@@ -644,8 +644,8 @@ export default function LoginPage() {
                         data-ocid="login.mobile_input"
                         className="h-11 rounded-xl"
                         style={{
-                          background: "oklch(0.10 0 0)",
-                          border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                          background: "oklch(0.20 0.010 255)",
+                          border: "1px solid oklch(0.30 0.015 255)",
                           color: "oklch(0.96 0.015 85)",
                         }}
                       />
@@ -667,8 +667,8 @@ export default function LoginPage() {
                         data-ocid="login.referral_input"
                         className="h-11 rounded-xl"
                         style={{
-                          background: "oklch(0.10 0 0)",
-                          border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                          background: "oklch(0.20 0.010 255)",
+                          border: "1px solid oklch(0.30 0.015 255)",
                           color: "oklch(0.96 0.015 85)",
                         }}
                       />
@@ -718,9 +718,9 @@ export default function LoginPage() {
                         <p
                           className="text-[10px] p-2 rounded-lg font-mono break-all"
                           style={{
-                            background: "oklch(0.08 0 0)",
-                            color: "oklch(0.52 0.01 85)",
-                            border: "1px solid oklch(0.18 0 0)",
+                            background: "oklch(0.16 0.008 255)",
+                            color: "oklch(0.60 0.01 85)",
+                            border: "1px solid oklch(0.24 0.010 255)",
                           }}
                         >
                           {registerError}
@@ -861,7 +861,7 @@ export default function LoginPage() {
                         <div
                           className="inline-flex items-center gap-3 px-5 py-3 rounded-xl"
                           style={{
-                            background: "oklch(0.10 0 0)",
+                            background: "oklch(0.18 0.010 255)",
                             border: "2px dashed oklch(0.70 0.20 35 / 0.6)",
                           }}
                         >
@@ -920,8 +920,8 @@ export default function LoginPage() {
                     <div
                       className="rounded-xl p-3 flex items-center gap-2.5"
                       style={{
-                        background: "oklch(0.12 0 0)",
-                        border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+                        background: "oklch(0.18 0.010 255)",
+                        border: "1px solid oklch(0.30 0.015 255)",
                       }}
                     >
                       <EyeOff
@@ -995,8 +995,8 @@ export default function LoginPage() {
                       data-ocid="login.otp_input"
                       className="h-14 rounded-xl text-center text-2xl font-bold font-mono tracking-[0.5em]"
                       style={{
-                        background: "oklch(0.10 0 0)",
-                        border: `1px solid ${otpError ? "oklch(0.62 0.22 25 / 0.7)" : "oklch(0.28 0.04 85 / 0.5)"}`,
+                        background: "oklch(0.20 0.010 255)",
+                        border: `1px solid ${otpError ? "oklch(0.62 0.22 25 / 0.7)" : "oklch(0.30 0.015 255)"}`,
                         color: "oklch(0.96 0.015 85)",
                         letterSpacing: "0.5em",
                       }}
@@ -1068,8 +1068,8 @@ export default function LoginPage() {
                       data-ocid="login.resend_otp_button"
                       className="flex-1 h-10 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-40"
                       style={{
-                        background: "oklch(0.14 0.01 85)",
-                        border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                        background: "oklch(0.22 0.012 255)",
+                        border: "1px solid oklch(0.30 0.015 255)",
                         color: "oklch(0.82 0.05 85)",
                       }}
                     >
@@ -1088,9 +1088,9 @@ export default function LoginPage() {
                       data-ocid="login.back_to_form_button"
                       className="flex-1 h-10 text-xs font-semibold rounded-xl flex items-center justify-center transition-opacity"
                       style={{
-                        background: "oklch(0.12 0 0)",
-                        border: "1px solid oklch(0.22 0.01 85)",
-                        color: "oklch(0.52 0.01 85)",
+                        background: "oklch(0.18 0.010 255)",
+                        border: "1px solid oklch(0.28 0.012 255)",
+                        color: "oklch(0.60 0.01 85)",
                       }}
                     >
                       ← Wapas Jaao

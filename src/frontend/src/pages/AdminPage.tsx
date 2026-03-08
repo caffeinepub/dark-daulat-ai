@@ -122,7 +122,7 @@ function DealForm({
       setForm((prev) => ({ ...prev, [k]: e.target.value }));
 
   const inputStyle = {
-    background: "oklch(0.10 0 0)",
+    background: "oklch(0.20 0.010 255)",
     border: "1px solid oklch(0.28 0.04 85 / 0.5)",
     color: "oklch(0.96 0.015 85)",
     fontSize: "14px",
@@ -132,7 +132,7 @@ function DealForm({
     <div
       className="space-y-3 p-4 rounded-xl"
       style={{
-        background: "oklch(0.12 0 0)",
+        background: "oklch(0.18 0.010 255)",
         border: "1px solid oklch(0.28 0.04 85 / 0.3)",
       }}
     >
@@ -284,8 +284,8 @@ function DealForm({
           variant="outline"
           className="flex-1 h-9 text-xs rounded-lg"
           style={{
-            background: "oklch(0.16 0 0)",
-            border: "1px solid oklch(0.28 0 0)",
+            background: "oklch(0.22 0.012 255)",
+            border: "1px solid oklch(0.30 0.015 255)",
             color: "oklch(0.62 0.01 85)",
           }}
         >
@@ -401,7 +401,7 @@ function QuickImportSection({
   const [editableDesc, setEditableDesc] = useState("");
 
   const inputStyle = {
-    background: "oklch(0.10 0 0)",
+    background: "oklch(0.20 0.010 255)",
     border: "1px solid oklch(0.28 0.04 85 / 0.5)",
     color: "oklch(0.96 0.015 85)",
     fontSize: "14px",
@@ -582,7 +582,7 @@ function QuickImportSection({
               key={p}
               className="text-[10px] px-2 py-0.5 rounded-full"
               style={{
-                background: platformColors[p]?.bg ?? "oklch(0.14 0 0)",
+                background: platformColors[p]?.bg ?? "oklch(0.22 0.012 255)",
                 color: platformColors[p]?.text ?? "oklch(0.62 0.01 85)",
                 border: `1px solid ${platformColors[p]?.text ?? "oklch(0.28 0.01 85)"}/0.3`,
               }}
@@ -607,7 +607,8 @@ function QuickImportSection({
               className="text-xs px-2.5 py-1 rounded-full font-semibold"
               style={{
                 background:
-                  platformColors[parsed.platform]?.bg ?? "oklch(0.14 0 0)",
+                  platformColors[parsed.platform]?.bg ??
+                  "oklch(0.22 0.012 255)",
                 color:
                   platformColors[parsed.platform]?.text ??
                   "oklch(0.62 0.01 85)",
@@ -770,7 +771,7 @@ function QuickImportSection({
               variant="outline"
               className="h-10 px-4 rounded-xl text-xs"
               style={{
-                background: "oklch(0.12 0 0)",
+                background: "oklch(0.18 0.010 255)",
                 border: "1px solid oklch(0.22 0.01 85)",
                 color: "oklch(0.52 0.01 85)",
               }}
@@ -993,7 +994,7 @@ function DealsTab() {
           data-ocid="admin.add_deal_button"
           className="w-full h-10 text-sm rounded-xl"
           style={{
-            background: "oklch(0.16 0 0)",
+            background: "oklch(0.22 0.012 255)",
             border: "1px solid oklch(0.28 0.04 85 / 0.5)",
             color: "oklch(0.78 0.12 85)",
           }}
@@ -1070,7 +1071,7 @@ function DealsTab() {
                 ) : (
                   <tr
                     key={Number(deal.id)}
-                    style={{ borderBottom: "1px solid oklch(0.16 0 0)" }}
+                    style={{ borderBottom: "1px solid oklch(0.24 0.010 255)" }}
                   >
                     <td
                       className="px-3 py-2.5"
@@ -1213,7 +1214,7 @@ function UsersTab() {
             {users.map((user: User) => (
               <tr
                 key={user.referralCode}
-                style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                style={{ borderBottom: "1px solid oklch(0.22 0.010 255)" }}
               >
                 <td
                   className="px-3 py-2.5"
@@ -1296,7 +1297,7 @@ function UsersTab() {
               onChange={(e) => setCreditAmount(e.target.value)}
               className="h-9 rounded-lg text-xs"
               style={{
-                background: "oklch(0.10 0 0)",
+                background: "oklch(0.20 0.010 255)",
                 border: "1px solid oklch(0.28 0.04 85 / 0.5)",
                 color: "oklch(0.96 0.015 85)",
               }}
@@ -1307,7 +1308,7 @@ function UsersTab() {
               onChange={(e) => setCreditNote(e.target.value)}
               className="h-9 rounded-lg text-xs"
               style={{
-                background: "oklch(0.10 0 0)",
+                background: "oklch(0.20 0.010 255)",
                 border: "1px solid oklch(0.28 0.04 85 / 0.5)",
                 color: "oklch(0.96 0.015 85)",
               }}
@@ -1334,7 +1335,7 @@ function UsersTab() {
               onClick={() => setCreditUserId(null)}
               className="px-3 h-9 rounded-lg text-xs shrink-0"
               style={{
-                background: "oklch(0.16 0 0)",
+                background: "oklch(0.22 0.012 255)",
                 border: "1px solid oklch(0.22 0.01 85)",
                 color: "oklch(0.62 0.01 85)",
               }}
@@ -1393,7 +1394,7 @@ function TransactionsTab() {
             {transactions.map((tx: Transaction) => (
               <tr
                 key={Number(tx.id)}
-                style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                style={{ borderBottom: "1px solid oklch(0.22 0.010 255)" }}
               >
                 <td
                   className="px-3 py-2.5"
@@ -1651,7 +1652,7 @@ function AdminEarningsTab() {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-xl p-4"
         style={{
-          background: "oklch(0.12 0 0)",
+          background: "oklch(0.18 0.010 255)",
           border: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
       >
@@ -1687,7 +1688,7 @@ function AdminEarningsTab() {
             <div
               key={title}
               className="flex items-start gap-2.5 p-2 rounded-lg"
-              style={{ background: "oklch(0.10 0 0 / 0.6)" }}
+              style={{ background: "oklch(0.18 0.010 255 / 0.6)" }}
             >
               <span className="text-base shrink-0">{icon}</span>
               <div>
@@ -1750,7 +1751,7 @@ function AdminEarningsTab() {
             data-ocid="admin.earnings_withdraw_amount_input"
             className="h-9 rounded-lg text-xs col-span-2"
             style={{
-              background: "oklch(0.10 0 0)",
+              background: "oklch(0.20 0.010 255)",
               border: "1px solid oklch(0.28 0.04 85 / 0.5)",
               color: "oklch(0.96 0.015 85)",
             }}
@@ -1762,7 +1763,7 @@ function AdminEarningsTab() {
             data-ocid="admin.earnings_upi_input"
             className="h-9 rounded-lg text-xs col-span-2"
             style={{
-              background: "oklch(0.10 0 0)",
+              background: "oklch(0.20 0.010 255)",
               border: "1px solid oklch(0.28 0.04 85 / 0.5)",
               color: "oklch(0.96 0.015 85)",
             }}
@@ -1966,7 +1967,7 @@ function AffiliateTab() {
   }
 
   const inputStyle = {
-    background: "oklch(0.10 0 0)",
+    background: "oklch(0.20 0.010 255)",
     border: "1px solid oklch(0.28 0.04 85 / 0.5)",
     color: "oklch(0.96 0.015 85)",
     fontSize: "14px",
@@ -2210,7 +2211,7 @@ function AffiliateTab() {
       <div
         className="rounded-xl p-4 space-y-3"
         style={{
-          background: "oklch(0.12 0 0)",
+          background: "oklch(0.18 0.010 255)",
           border: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
       >
@@ -2436,7 +2437,7 @@ function KycTab() {
       <div
         className="rounded-xl p-3 flex items-start gap-2.5"
         style={{
-          background: "oklch(0.10 0 0)",
+          background: "oklch(0.20 0.010 255)",
           border: "1px solid oklch(0.78 0.12 85 / 0.25)",
         }}
       >
@@ -2462,7 +2463,7 @@ function KycTab() {
             key={stat.label}
             className="rounded-xl p-3 text-center"
             style={{
-              background: "oklch(0.12 0 0)",
+              background: "oklch(0.18 0.010 255)",
               border: "1px solid oklch(0.22 0.01 85)",
             }}
           >
@@ -2489,7 +2490,7 @@ function KycTab() {
           data-ocid="admin.kyc_empty_state"
           className="rounded-xl p-6 text-center"
           style={{
-            background: "oklch(0.12 0 0)",
+            background: "oklch(0.18 0.010 255)",
             border: "1px solid oklch(0.22 0.01 85)",
           }}
         >
@@ -2536,7 +2537,9 @@ function KycTab() {
                   <>
                     <tr
                       key={kycId}
-                      style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                      style={{
+                        borderBottom: "1px solid oklch(0.22 0.010 255)",
+                      }}
                     >
                       <td
                         className="px-3 py-2.5 font-mono"
@@ -2621,12 +2624,14 @@ function KycTab() {
                     {rejectingId === kycId && (
                       <tr
                         key={`${kycId}_reject`}
-                        style={{ borderBottom: "1px solid oklch(0.14 0 0)" }}
+                        style={{
+                          borderBottom: "1px solid oklch(0.22 0.010 255)",
+                        }}
                       >
                         <td
                           colSpan={6}
                           className="px-3 py-2"
-                          style={{ background: "oklch(0.10 0 0 / 0.5)" }}
+                          style={{ background: "oklch(0.18 0.010 255 / 0.5)" }}
                         >
                           <div className="flex gap-2 items-center">
                             <Input
@@ -2636,7 +2641,7 @@ function KycTab() {
                               data-ocid="admin.kyc_reject_reason_input"
                               className="h-8 rounded-lg text-xs flex-1"
                               style={{
-                                background: "oklch(0.10 0 0)",
+                                background: "oklch(0.20 0.010 255)",
                                 border: "1px solid oklch(0.28 0.04 85 / 0.5)",
                                 color: "oklch(0.96 0.015 85)",
                               }}
@@ -2664,7 +2669,7 @@ function KycTab() {
                               data-ocid="admin.kyc_reject_cancel_button"
                               className="px-3 h-8 rounded-lg text-[10px] shrink-0"
                               style={{
-                                background: "oklch(0.16 0 0)",
+                                background: "oklch(0.22 0.012 255)",
                                 border: "1px solid oklch(0.22 0.01 85)",
                                 color: "oklch(0.62 0.01 85)",
                               }}
@@ -2860,7 +2865,7 @@ function ClaimsTab() {
           data-ocid="admin.claims_empty_state"
           className="rounded-xl p-6 text-center"
           style={{
-            background: "oklch(0.12 0 0)",
+            background: "oklch(0.18 0.010 255)",
             border: "1px solid oklch(0.22 0.01 85)",
           }}
         >
@@ -2928,7 +2933,7 @@ function ClaimsTab() {
                   <div
                     className="rounded-lg px-2.5 py-1.5"
                     style={{
-                      background: "oklch(0.10 0 0 / 0.5)",
+                      background: "oklch(0.18 0.010 255 / 0.5)",
                       border: "1px solid oklch(0.20 0.01 85)",
                     }}
                   >
@@ -2945,7 +2950,7 @@ function ClaimsTab() {
                   <div
                     className="rounded-lg px-2.5 py-1.5"
                     style={{
-                      background: "oklch(0.10 0 0 / 0.5)",
+                      background: "oklch(0.18 0.010 255 / 0.5)",
                       border: "1px solid oklch(0.20 0.01 85)",
                     }}
                   >
@@ -2962,7 +2967,7 @@ function ClaimsTab() {
                       <div
                         className="rounded-lg px-2.5 py-1.5"
                         style={{
-                          background: "oklch(0.10 0 0 / 0.5)",
+                          background: "oklch(0.18 0.010 255 / 0.5)",
                           border: "1px solid oklch(0.20 0.01 85)",
                         }}
                       >
@@ -3087,7 +3092,7 @@ export default function AdminPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"
-        style={{ background: "oklch(0.06 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         <Toaster
           theme="dark"
@@ -3124,7 +3129,7 @@ export default function AdminPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ background: "oklch(0.06 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         <Loader2
           size={32}
@@ -3144,7 +3149,7 @@ export default function AdminPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6 gap-4"
-        style={{ background: "oklch(0.06 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         <Toaster
           theme="dark"
@@ -3171,7 +3176,7 @@ export default function AdminPage() {
           style={{
             background: isNotRegistered
               ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
-              : "oklch(0.14 0 0)",
+              : "oklch(0.22 0.012 255)",
             border: isNotRegistered ? "none" : "1px solid oklch(0.22 0.01 85)",
             color: isNotRegistered ? "oklch(0.08 0 0)" : "oklch(0.62 0.01 85)",
           }}
@@ -3184,7 +3189,10 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "oklch(0.07 0 0)" }}>
+    <div
+      className="min-h-screen"
+      style={{ background: "oklch(0.13 0.008 255)" }}
+    >
       <Toaster
         theme="dark"
         toastOptions={{
@@ -3200,7 +3208,7 @@ export default function AdminPage() {
       <header
         className="px-4 py-4 sticky top-0 z-40"
         style={{
-          background: "oklch(0.08 0 0)",
+          background: "oklch(0.16 0.010 255)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
           backdropFilter: "blur(20px)",
         }}
@@ -3211,7 +3219,7 @@ export default function AdminPage() {
               href="/"
               className="p-1.5 rounded-lg"
               style={{
-                background: "oklch(0.14 0 0)",
+                background: "oklch(0.22 0.012 255)",
                 border: "1px solid oklch(0.22 0.01 85)",
               }}
             >
@@ -3249,7 +3257,7 @@ export default function AdminPage() {
           <TabsList
             className="w-full h-10 grid grid-cols-8 rounded-xl mb-4"
             style={{
-              background: "oklch(0.12 0 0)",
+              background: "oklch(0.18 0.010 255)",
               border: "1px solid oklch(0.22 0.01 85)",
             }}
           >

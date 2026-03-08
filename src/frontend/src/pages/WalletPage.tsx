@@ -187,7 +187,7 @@ export default function WalletPage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -395,8 +395,8 @@ export default function WalletPage() {
                       min="200"
                       className="pl-9 h-11 rounded-xl text-sm"
                       style={{
-                        background: "oklch(0.10 0 0)",
-                        border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                        background: "oklch(0.20 0.010 255)",
+                        border: "1px solid oklch(0.30 0.015 255)",
                         color: "oklch(0.96 0.015 85)",
                       }}
                       onKeyDown={(e) => e.key === "Enter" && handleWithdraw()}
@@ -413,9 +413,9 @@ export default function WalletPage() {
                       onClick={() => setWithdrawAmount(String(amt))}
                       className="flex-1 py-1.5 rounded-lg text-xs font-medium"
                       style={{
-                        background: "oklch(0.12 0 0)",
-                        border: "1px solid oklch(0.22 0.01 85)",
-                        color: "oklch(0.62 0.01 85)",
+                        background: "oklch(0.20 0.010 255)",
+                        border: "1px solid oklch(0.28 0.012 255)",
+                        color: "oklch(0.68 0.01 85)",
                       }}
                     >
                       ₹{amt}
@@ -526,8 +526,8 @@ export default function WalletPage() {
             <div
               className="rounded-xl p-6 text-center"
               style={{
-                background: "oklch(0.12 0 0)",
-                border: "1px solid oklch(0.22 0.01 85)",
+                background: "oklch(0.18 0.010 255)",
+                border: "1px solid oklch(0.28 0.012 255)",
               }}
             >
               <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>

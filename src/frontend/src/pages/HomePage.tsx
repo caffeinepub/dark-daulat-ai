@@ -86,7 +86,7 @@ export default function HomePage() {
         className="sticky top-0 z-40 px-4 py-4 flex items-center justify-between"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -350,7 +350,7 @@ export default function HomePage() {
               <div
                 key={step}
                 className="flex items-center gap-3 p-2 rounded-xl"
-                style={{ background: "oklch(0.10 0 0 / 0.5)" }}
+                style={{ background: "oklch(0.20 0.010 255 / 0.6)" }}
               >
                 <div
                   className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
@@ -452,8 +452,8 @@ export default function HomePage() {
             transition={{ delay: 0.6 }}
             className="rounded-xl p-3 flex items-center gap-3"
             style={{
-              background: "oklch(0.12 0 0)",
-              border: "1px solid oklch(0.22 0.01 85)",
+              background: "oklch(0.18 0.010 255)",
+              border: "1px solid oklch(0.28 0.012 255)",
             }}
           >
             <div

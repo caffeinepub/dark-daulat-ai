@@ -71,7 +71,7 @@ export default function CalculatorPage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -125,7 +125,7 @@ export default function CalculatorPage() {
                 data-ocid="calculator.price_input"
                 className="pl-9 h-12 rounded-xl text-base"
                 style={{
-                  background: "oklch(0.10 0 0)",
+                  background: "oklch(0.20 0.010 255)",
                   border: "1px solid oklch(0.28 0.04 85 / 0.5)",
                   color: "oklch(0.96 0.015 85)",
                 }}
@@ -159,7 +159,7 @@ export default function CalculatorPage() {
                 max="100"
                 className="pl-9 h-12 rounded-xl text-base"
                 style={{
-                  background: "oklch(0.10 0 0)",
+                  background: "oklch(0.20 0.010 255)",
                   border: "1px solid oklch(0.28 0.04 85 / 0.5)",
                   color: "oklch(0.96 0.015 85)",
                 }}
@@ -327,7 +327,7 @@ export default function CalculatorPage() {
               <div className="mt-4">
                 <div
                   className="h-2 rounded-full overflow-hidden"
-                  style={{ background: "oklch(0.12 0 0)" }}
+                  style={{ background: "oklch(0.18 0.010 255)" }}
                 >
                   <motion.div
                     initial={{ width: 0 }}
@@ -357,7 +357,7 @@ export default function CalculatorPage() {
         <div
           className="rounded-xl p-3 text-xs leading-relaxed"
           style={{
-            background: "oklch(0.12 0 0)",
+            background: "oklch(0.18 0.010 255)",
             border: "1px solid oklch(0.22 0.01 85)",
             color: "oklch(0.52 0.01 85)",
           }}

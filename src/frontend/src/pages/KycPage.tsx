@@ -150,7 +150,7 @@ export default function KycPage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -162,7 +162,7 @@ export default function KycPage() {
             data-ocid="kyc.back_button"
             className="p-2 rounded-xl transition-colors"
             style={{
-              background: "oklch(0.14 0.01 85)",
+              background: "oklch(0.22 0.012 255)",
               border: "1px solid oklch(0.28 0.04 85 / 0.4)",
             }}
           >
@@ -457,8 +457,8 @@ export default function KycPage() {
                         background:
                           selectedDoc === KycDocType.aadhaar
                             ? "linear-gradient(135deg, oklch(0.14 0.04 85), oklch(0.18 0.06 85))"
-                            : "oklch(0.12 0 0)",
-                        border: `2px solid ${selectedDoc === KycDocType.aadhaar ? "oklch(0.78 0.12 85 / 0.7)" : "oklch(0.22 0.01 85)"}`,
+                            : "oklch(0.18 0.010 255)",
+                        border: `2px solid ${selectedDoc === KycDocType.aadhaar ? "oklch(0.78 0.12 85 / 0.7)" : "oklch(0.28 0.012 255)"}`,
                         boxShadow:
                           selectedDoc === KycDocType.aadhaar
                             ? "0 4px 16px oklch(0.78 0.12 85 / 0.2)"
@@ -488,7 +488,7 @@ export default function KycPage() {
                       </p>
                       <p
                         className="text-[10px] mt-0.5"
-                        style={{ color: "oklch(0.45 0.01 85)" }}
+                        style={{ color: "oklch(0.58 0.010 85)" }}
                       >
                         12-digit number
                       </p>
@@ -508,8 +508,8 @@ export default function KycPage() {
                         background:
                           selectedDoc === KycDocType.pan
                             ? "linear-gradient(135deg, oklch(0.14 0.04 85), oklch(0.18 0.06 85))"
-                            : "oklch(0.12 0 0)",
-                        border: `2px solid ${selectedDoc === KycDocType.pan ? "oklch(0.78 0.12 85 / 0.7)" : "oklch(0.22 0.01 85)"}`,
+                            : "oklch(0.18 0.010 255)",
+                        border: `2px solid ${selectedDoc === KycDocType.pan ? "oklch(0.78 0.12 85 / 0.7)" : "oklch(0.28 0.012 255)"}`,
                         boxShadow:
                           selectedDoc === KycDocType.pan
                             ? "0 4px 16px oklch(0.78 0.12 85 / 0.2)"
@@ -539,7 +539,7 @@ export default function KycPage() {
                       </p>
                       <p
                         className="text-[10px] mt-0.5"
-                        style={{ color: "oklch(0.45 0.01 85)" }}
+                        style={{ color: "oklch(0.58 0.010 85)" }}
                       >
                         10-char (ABCDE1234F)
                       </p>
@@ -592,7 +592,7 @@ export default function KycPage() {
                         data-ocid="kyc.doc_number_input"
                         className="h-12 rounded-xl text-lg font-mono tracking-wider"
                         style={{
-                          background: "oklch(0.10 0 0)",
+                          background: "oklch(0.20 0.010 255)",
                           border: `1px solid ${docError ? "oklch(0.62 0.22 25 / 0.7)" : "oklch(0.28 0.04 85 / 0.5)"}`,
                           color: "oklch(0.96 0.015 85)",
                         }}
@@ -608,7 +608,7 @@ export default function KycPage() {
                       )}
                       <p
                         className="text-[10px] mt-1.5"
-                        style={{ color: "oklch(0.45 0.01 85)" }}
+                        style={{ color: "oklch(0.58 0.010 85)" }}
                       >
                         {selectedDoc === KycDocType.aadhaar
                           ? "Aadhaar card pe 12-digit number hota hai"
@@ -661,7 +661,7 @@ export default function KycPage() {
                       border: `2px dashed ${docImage ? "oklch(0.55 0.18 145 / 0.6)" : "oklch(0.78 0.12 85 / 0.5)"}`,
                       background: docImage
                         ? "oklch(0.55 0.18 145 / 0.06)"
-                        : "oklch(0.10 0 0 / 0.5)",
+                        : "oklch(0.18 0.010 255 / 0.5)",
                     }}
                   >
                     <Camera
@@ -686,7 +686,7 @@ export default function KycPage() {
                     </p>
                     <p
                       className="text-[10px]"
-                      style={{ color: "oklch(0.45 0.01 85)" }}
+                      style={{ color: "oklch(0.58 0.010 85)" }}
                     >
                       JPG, PNG — max 2MB
                     </p>
@@ -712,7 +712,7 @@ export default function KycPage() {
                         className="w-full max-h-32 object-contain rounded-xl"
                         style={{
                           border: "1px solid oklch(0.55 0.18 145 / 0.4)",
-                          background: "oklch(0.10 0 0)",
+                          background: "oklch(0.20 0.010 255)",
                         }}
                       />
                       <p
@@ -767,7 +767,7 @@ export default function KycPage() {
                 <div
                   className="rounded-xl p-3 flex items-start gap-2"
                   style={{
-                    background: "oklch(0.10 0 0 / 0.8)",
+                    background: "oklch(0.18 0.010 255 / 0.8)",
                     border: "1px solid oklch(0.22 0.01 85)",
                   }}
                 >
@@ -778,7 +778,7 @@ export default function KycPage() {
                   />
                   <p
                     className="text-xs leading-relaxed"
-                    style={{ color: "oklch(0.45 0.01 85)" }}
+                    style={{ color: "oklch(0.58 0.010 85)" }}
                   >
                     🔒 Aapka data completely secure hai. Sirf Admin verify karta
                     hai. Koi bhi third party ko share nahi hoga.

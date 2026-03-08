@@ -76,7 +76,7 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
         </div>
         <span
           className="text-xs mt-1 px-1"
-          style={{ color: "oklch(0.38 0.01 85)" }}
+          style={{ color: "oklch(0.58 0.010 85)" }}
         >
           {formatTime(msg.timestamp)}
         </span>
@@ -133,9 +133,9 @@ export default function ChatPage() {
         className="px-4 py-4 flex items-center justify-between shrink-0"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
-          borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
+          borderBottom: "1px solid oklch(0.30 0.015 255 / 0.5)",
         }}
       >
         <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function ChatPage() {
             >
               AI Assistant
             </h1>
-            <p className="text-xs" style={{ color: "oklch(0.52 0.01 85)" }}>
+            <p className="text-xs" style={{ color: "oklch(0.65 0.010 85)" }}>
               Online • Dark Daulat AI
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function ChatPage() {
       <div
         className="flex-1 overflow-y-auto p-4"
         data-ocid="chat.message_list"
-        style={{ background: "oklch(0.07 0 0)" }}
+        style={{ background: "oklch(0.13 0.008 255)" }}
       >
         {/* Tips */}
         {messages.length === 0 && !isLoading && (
@@ -218,7 +218,7 @@ export default function ChatPage() {
               </h3>
               <p
                 className="text-xs text-center mt-1"
-                style={{ color: "oklch(0.52 0.01 85)" }}
+                style={{ color: "oklch(0.65 0.010 85)" }}
               >
                 Hindi/Urdu mein pooch sakte ho
               </p>
@@ -321,7 +321,7 @@ export default function ChatPage() {
       <div
         className="px-4 py-3 shrink-0"
         style={{
-          background: "oklch(0.09 0 0)",
+          background: "oklch(0.16 0.010 255)",
           borderTop: "1px solid oklch(0.22 0.01 85)",
         }}
       >
@@ -333,7 +333,7 @@ export default function ChatPage() {
             data-ocid="chat.message_input"
             className="flex-1 h-12 rounded-xl text-base"
             style={{
-              background: "oklch(0.12 0 0)",
+              background: "oklch(0.18 0.010 255)",
               border: "1px solid oklch(0.28 0.04 85 / 0.5)",
               color: "oklch(0.96 0.015 85)",
             }}
@@ -353,7 +353,7 @@ export default function ChatPage() {
             style={{
               background: input.trim()
                 ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
-                : "oklch(0.16 0 0)",
+                : "oklch(0.22 0.012 255)",
               border: "none",
               boxShadow: input.trim()
                 ? "0 2px 12px oklch(0.78 0.12 85 / 0.4)"

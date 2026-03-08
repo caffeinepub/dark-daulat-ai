@@ -98,7 +98,7 @@ export default function SharePage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -157,7 +157,7 @@ export default function SharePage() {
               <div
                 className="rounded-xl p-4 mb-3 flex items-center justify-between"
                 style={{
-                  background: "oklch(0.08 0 0 / 0.6)",
+                  background: "oklch(0.16 0.010 255 / 0.6)",
                   border: "1px solid oklch(0.78 0.12 85 / 0.3)",
                 }}
               >
@@ -189,7 +189,7 @@ export default function SharePage() {
             <div
               className="rounded-lg px-3 py-2.5 flex items-center justify-between gap-2 mb-4"
               style={{
-                background: "oklch(0.10 0 0 / 0.8)",
+                background: "oklch(0.18 0.010 255 / 0.8)",
                 border: "1px solid oklch(0.28 0.04 85 / 0.4)",
               }}
             >
@@ -346,7 +346,7 @@ export default function SharePage() {
                 key={title}
                 className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5"
                 style={{
-                  background: "oklch(0.10 0 0 / 0.5)",
+                  background: "oklch(0.18 0.010 255 / 0.5)",
                   border: "1px solid oklch(0.22 0.02 85 / 0.5)",
                 }}
               >
@@ -359,7 +359,7 @@ export default function SharePage() {
                 </p>
                 <p
                   className="text-[10px]"
-                  style={{ color: "oklch(0.48 0.01 85)" }}
+                  style={{ color: "oklch(0.62 0.010 85)" }}
                 >
                   {desc}
                 </p>
@@ -404,7 +404,7 @@ export default function SharePage() {
               <div
                 className="rounded-xl p-3 text-center"
                 style={{
-                  background: "oklch(0.10 0 0 / 0.5)",
+                  background: "oklch(0.18 0.010 255 / 0.5)",
                   border: "1px solid oklch(0.78 0.12 85 / 0.2)",
                 }}
               >
@@ -421,7 +421,7 @@ export default function SharePage() {
               <div
                 className="rounded-xl p-3 text-center"
                 style={{
-                  background: "oklch(0.10 0 0 / 0.5)",
+                  background: "oklch(0.18 0.010 255 / 0.5)",
                   border: "1px solid oklch(0.55 0.18 145 / 0.2)",
                 }}
               >
@@ -481,12 +481,12 @@ export default function SharePage() {
                 className="mx-auto mb-2"
                 style={{ color: "oklch(0.35 0.04 85)" }}
               />
-              <p className="text-sm" style={{ color: "oklch(0.45 0.01 85)" }}>
+              <p className="text-sm" style={{ color: "oklch(0.58 0.010 85)" }}>
                 Abhi koi earnings nahi hui
               </p>
               <p
                 className="text-xs mt-1"
-                style={{ color: "oklch(0.35 0.01 85)" }}
+                style={{ color: "oklch(0.55 0.010 85)" }}
               >
                 Pehle earner bano!
               </p>
@@ -507,7 +507,7 @@ export default function SharePage() {
                     style={{
                       background: isCurrentUser
                         ? "oklch(0.78 0.12 85 / 0.12)"
-                        : "oklch(0.10 0 0 / 0.5)",
+                        : "oklch(0.18 0.010 255 / 0.5)",
                       border: isCurrentUser
                         ? "1px solid oklch(0.78 0.12 85 / 0.35)"
                         : "1px solid oklch(0.20 0.01 85 / 0.5)",
@@ -629,9 +629,9 @@ export default function SharePage() {
         <div
           className="rounded-xl px-4 py-3 text-xs text-center"
           style={{
-            background: "oklch(0.10 0 0 / 0.5)",
+            background: "oklch(0.18 0.010 255 / 0.5)",
             border: "1px solid oklch(0.22 0.01 85 / 0.5)",
-            color: "oklch(0.42 0.01 85)",
+            color: "oklch(0.58 0.010 85)",
           }}
         >
           ⚠️ Self-referral allowed nahi hai. Fraud detect hone par account

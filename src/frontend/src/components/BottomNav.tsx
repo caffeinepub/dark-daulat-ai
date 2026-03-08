@@ -34,7 +34,7 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
         background:
-          "linear-gradient(to top, oklch(0.08 0 0) 0%, oklch(0.10 0.005 85) 100%)",
+          "linear-gradient(to top, oklch(0.13 0.008 255) 0%, oklch(0.18 0.010 255) 100%)",
         borderTop: "1px solid oklch(0.28 0.04 85 / 0.4)",
         backdropFilter: "blur(20px)",
         paddingBottom: "env(safe-area-inset-bottom)",

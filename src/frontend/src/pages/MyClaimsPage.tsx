@@ -283,7 +283,7 @@ function ConfirmPurchaseForm({
             onClick={onDone}
             className="h-9 px-4 text-xs rounded-xl"
             style={{
-              background: "oklch(0.14 0 0)",
+              background: "oklch(0.22 0.012 255)",
               border: "1px solid oklch(0.28 0.01 85)",
               color: "oklch(0.55 0.01 85)",
             }}
@@ -302,7 +302,7 @@ function ConfirmPurchaseForm({
       exit={{ opacity: 0, height: 0 }}
       className="rounded-xl p-4 space-y-3 overflow-hidden"
       style={{
-        background: "oklch(0.12 0 0 / 0.7)",
+        background: "oklch(0.18 0.010 255 / 0.7)",
         border: "1px solid oklch(0.78 0.12 85 / 0.3)",
       }}
     >
@@ -330,7 +330,7 @@ function ConfirmPurchaseForm({
           placeholder="Jaise: 1299"
           className="h-10 rounded-xl text-sm"
           style={{
-            background: "oklch(0.10 0 0)",
+            background: "oklch(0.20 0.010 255)",
             border: "1px solid oklch(0.28 0.04 85 / 0.5)",
             color: "oklch(0.96 0.015 85)",
           }}
@@ -456,7 +456,7 @@ function ConfirmPurchaseForm({
             border: `2px dashed ${proofError ? "oklch(0.62 0.22 25 / 0.7)" : proofImage ? "oklch(0.55 0.18 145 / 0.7)" : "oklch(0.78 0.12 85 / 0.5)"}`,
             background: proofImage
               ? "oklch(0.55 0.18 145 / 0.07)"
-              : "oklch(0.10 0 0 / 0.5)",
+              : "oklch(0.18 0.010 255 / 0.5)",
           }}
         >
           <Camera
@@ -512,7 +512,7 @@ function ConfirmPurchaseForm({
             className="w-full max-h-32 object-contain rounded-xl"
             style={{
               border: "1px solid oklch(0.55 0.18 145 / 0.4)",
-              background: "oklch(0.10 0 0)",
+              background: "oklch(0.20 0.010 255)",
             }}
           />
         )}
@@ -541,7 +541,7 @@ function ConfirmPurchaseForm({
           variant="outline"
           className="h-9 px-4 text-xs rounded-xl"
           style={{
-            background: "oklch(0.14 0 0)",
+            background: "oklch(0.22 0.012 255)",
             border: "1px solid oklch(0.28 0.01 85)",
             color: "oklch(0.55 0.01 85)",
           }}
@@ -606,7 +606,7 @@ function ActiveTrackingCard({
       <div
         className="flex items-center justify-between rounded-xl px-3 py-2.5"
         style={{
-          background: "oklch(0.09 0 0 / 0.7)",
+          background: "oklch(0.16 0.010 255 / 0.7)",
           border: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
       >
@@ -639,7 +639,7 @@ function ActiveTrackingCard({
       </div>
 
       {/* Created date */}
-      <p className="text-[10px]" style={{ color: "oklch(0.42 0.01 85)" }}>
+      <p className="text-[10px]" style={{ color: "oklch(0.58 0.010 85)" }}>
         Banaya: {formatDate(claim.createdAt)}
       </p>
 
@@ -693,7 +693,7 @@ function ClaimHistoryCard({
       data-ocid={`claims.history.item.${index + 1}`}
       className="rounded-xl p-3.5"
       style={{
-        background: "oklch(0.12 0 0)",
+        background: "oklch(0.18 0.010 255)",
         border: `1px solid ${
           statusStr === "approved"
             ? "oklch(0.55 0.18 145 / 0.3)"
@@ -751,7 +751,7 @@ function ClaimHistoryCard({
       {claim.purchaseAmount > 0n && claim.adminCommissionAmount > 0n && (
         <div
           className="text-[10px] mb-2"
-          style={{ color: "oklch(0.42 0.01 85)" }}
+          style={{ color: "oklch(0.58 0.010 85)" }}
         >
           Admin ka hissa: ₹{formatINR(claim.adminCommissionAmount)} (3%)
         </div>
@@ -802,7 +802,7 @@ function ClaimHistoryCard({
         </div>
       )}
 
-      <p className="text-[10px]" style={{ color: "oklch(0.38 0.01 85)" }}>
+      <p className="text-[10px]" style={{ color: "oklch(0.58 0.010 85)" }}>
         {formatDate(claim.createdAt)}
       </p>
     </motion.div>
@@ -841,7 +841,7 @@ export default function MyClaimsPage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -853,7 +853,7 @@ export default function MyClaimsPage() {
             data-ocid="claims.back_button"
             className="p-2 rounded-xl transition-all active:scale-90"
             style={{
-              background: "oklch(0.14 0 0)",
+              background: "oklch(0.22 0.012 255)",
               border: "1px solid oklch(0.22 0.01 85)",
             }}
           >
@@ -974,7 +974,7 @@ export default function MyClaimsPage() {
               data-ocid="claims.active.empty_state"
               className="rounded-2xl p-6 text-center"
               style={{
-                background: "oklch(0.11 0 0)",
+                background: "oklch(0.16 0.010 255)",
                 border: "1px solid oklch(0.22 0.01 85 / 0.5)",
               }}
             >
@@ -991,7 +991,7 @@ export default function MyClaimsPage() {
               </p>
               <p
                 className="text-xs mt-1"
-                style={{ color: "oklch(0.38 0.01 85)" }}
+                style={{ color: "oklch(0.58 0.010 85)" }}
               >
                 Deals page se koi deal share karo — link yahan dikhega
               </p>
@@ -1035,7 +1035,7 @@ export default function MyClaimsPage() {
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full"
                 style={{
-                  background: "oklch(0.20 0.01 85)",
+                  background: "oklch(0.26 0.012 255)",
                   color: "oklch(0.55 0.01 85)",
                 }}
               >
@@ -1055,7 +1055,7 @@ export default function MyClaimsPage() {
               data-ocid="claims.history.empty_state"
               className="rounded-xl p-5 text-center"
               style={{
-                background: "oklch(0.11 0 0)",
+                background: "oklch(0.16 0.010 255)",
                 border: "1px solid oklch(0.20 0.01 85 / 0.5)",
               }}
             >
@@ -1064,7 +1064,7 @@ export default function MyClaimsPage() {
               </p>
               <p
                 className="text-xs mt-1"
-                style={{ color: "oklch(0.35 0.01 85)" }}
+                style={{ color: "oklch(0.55 0.010 85)" }}
               >
                 Deals page se share karo aur yahan track karo!
               </p>

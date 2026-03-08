@@ -1230,7 +1230,7 @@ export default function DealsPage() {
         className="sticky top-0 z-40 px-4 py-3"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -1269,8 +1269,8 @@ export default function DealsPage() {
             data-ocid="deals.search_input"
             className="pl-9 h-10 rounded-xl text-sm"
             style={{
-              background: "oklch(0.12 0 0)",
-              border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+              background: "oklch(0.20 0.010 255)",
+              border: "1px solid oklch(0.30 0.015 255)",
               color: "oklch(0.96 0.015 85)",
             }}
           />
@@ -1487,29 +1487,6 @@ export default function DealsPage() {
             )}
           </>
         )}
-
-        {/* Amazon Affiliate Disclaimer */}
-        <div
-          className="mt-4 rounded-xl px-3 py-2.5 text-center"
-          style={{
-            background: "oklch(0.10 0 0 / 0.6)",
-            border: "1px solid oklch(0.22 0.01 85 / 0.4)",
-          }}
-        >
-          <p
-            className="text-[10px] leading-relaxed"
-            style={{ color: "oklch(0.42 0.01 85)" }}
-          >
-            📌{" "}
-            <strong style={{ color: "oklch(0.52 0.01 85)" }}>
-              Affiliate Disclosure:
-            </strong>{" "}
-            Dark Daulat AI ek Amazon Associates participant hai. In links se ki
-            gayi khareedari par hamen commission milti hai — aapko koi extra
-            charge nahi lagta. Flipkart, AliExpress aur Fiverr ke links bhi
-            affiliate program ke hisse hain.
-          </p>
-        </div>
       </div>
     </div>
   );

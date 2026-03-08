@@ -129,7 +129,7 @@ export default function ProfilePage() {
         className="sticky top-0 z-40 px-4 py-4"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.08 0 0) 0%, oklch(0.08 0 0 / 0.95) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.95) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.28 0.04 85 / 0.3)",
         }}
@@ -475,7 +475,7 @@ export default function ProfilePage() {
             <div
               className="rounded-xl p-3 flex items-center justify-between gap-3 mb-2"
               style={{
-                background: "oklch(0.08 0 0)",
+                background: "oklch(0.16 0.010 255)",
                 border: "1px solid oklch(0.78 0.12 85 / 0.4)",
               }}
             >
@@ -514,8 +514,8 @@ export default function ProfilePage() {
             <div
               className="rounded-lg px-3 py-2 mb-3 flex items-center gap-2"
               style={{
-                background: "oklch(0.10 0 0)",
-                border: "1px solid oklch(0.28 0.04 85 / 0.4)",
+                background: "oklch(0.20 0.010 255)",
+                border: "1px solid oklch(0.30 0.015 255)",
               }}
             >
               <span
@@ -609,8 +609,8 @@ export default function ProfilePage() {
                   data-ocid="profile.upi_input"
                   className="h-9 rounded-xl text-sm"
                   style={{
-                    background: "oklch(0.10 0 0)",
-                    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                    background: "oklch(0.20 0.010 255)",
+                    border: "1px solid oklch(0.30 0.015 255)",
                     color: "oklch(0.96 0.015 85)",
                   }}
                 />
@@ -629,8 +629,8 @@ export default function ProfilePage() {
                   data-ocid="profile.account_holder_input"
                   className="h-9 rounded-xl text-sm"
                   style={{
-                    background: "oklch(0.10 0 0)",
-                    border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                    background: "oklch(0.20 0.010 255)",
+                    border: "1px solid oklch(0.30 0.015 255)",
                     color: "oklch(0.96 0.015 85)",
                   }}
                 />
@@ -650,8 +650,8 @@ export default function ProfilePage() {
                     data-ocid="profile.bank_account_input"
                     className="h-9 rounded-xl text-sm"
                     style={{
-                      background: "oklch(0.10 0 0)",
-                      border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                      background: "oklch(0.20 0.010 255)",
+                      border: "1px solid oklch(0.30 0.015 255)",
                       color: "oklch(0.96 0.015 85)",
                     }}
                   />
@@ -670,8 +670,8 @@ export default function ProfilePage() {
                     data-ocid="profile.ifsc_input"
                     className="h-9 rounded-xl text-sm"
                     style={{
-                      background: "oklch(0.10 0 0)",
-                      border: "1px solid oklch(0.28 0.04 85 / 0.5)",
+                      background: "oklch(0.20 0.010 255)",
+                      border: "1px solid oklch(0.30 0.015 255)",
                       color: "oklch(0.96 0.015 85)",
                     }}
                   />
@@ -743,8 +743,8 @@ export default function ProfilePage() {
             <div
               className="rounded-xl p-4 text-center"
               style={{
-                background: "oklch(0.12 0 0)",
-                border: "1px solid oklch(0.22 0.01 85)",
+                background: "oklch(0.18 0.010 255)",
+                border: "1px solid oklch(0.28 0.012 255)",
               }}
             >
               <p className="text-sm" style={{ color: "oklch(0.52 0.01 85)" }}>
@@ -776,9 +776,9 @@ export default function ProfilePage() {
                         background:
                           rank <= 3
                             ? "linear-gradient(135deg, oklch(0.72 0.11 80), oklch(0.88 0.15 88))"
-                            : "oklch(0.18 0 0)",
+                            : "oklch(0.24 0.010 255)",
                         color:
-                          rank <= 3 ? "oklch(0.08 0 0)" : "oklch(0.52 0.01 85)",
+                          rank <= 3 ? "oklch(0.08 0 0)" : "oklch(0.65 0.01 85)",
                       }}
                     >
                       {getRankIcon(rank)}

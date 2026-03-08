@@ -153,7 +153,7 @@ export default function PrivacyPolicyPage() {
         className="sticky top-0 z-40 px-4 py-4 shine-sweep"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.07 0 0) 0%, oklch(0.07 0 0 / 0.96) 100%)",
+            "linear-gradient(180deg, oklch(0.16 0.010 255) 0%, oklch(0.16 0.010 255 / 0.96) 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: "1px solid oklch(0.30 0.05 85 / 0.35)",
         }}
