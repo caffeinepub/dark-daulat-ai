@@ -192,6 +192,8 @@ export default function LoginPage() {
     }
 
     setOtpLoading(true);
+    // Wait a moment for actor to fully initialize after login
+    await new Promise((r) => setTimeout(r, 800));
     try {
       const generatedOtp = await generateOtpMutation.mutateAsync({
         email: email.trim(),
@@ -216,6 +218,9 @@ export default function LoginPage() {
   // ── Direct Register (skip OTP when OTP generation fails) ─────────────────
   const handleDirectRegister = async () => {
     setOtpLoading(true);
+    setRegisterError("");
+    // Small delay to let actor fully initialize before registering
+    await new Promise((r) => setTimeout(r, 1200));
     try {
       await registerMutation.mutateAsync({
         name: name.trim(),

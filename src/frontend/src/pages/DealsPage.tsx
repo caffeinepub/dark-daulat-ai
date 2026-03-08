@@ -963,7 +963,7 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
     if (trackingCode) {
       message = `🔥 *${deal.title}* sirf ₹${formatINR(deal.price)} mein!\n\n🛒 Yahan se kharidein: ${deal.affiliateLink}\n\n🏷️ Mere tracking code se khareedein: *${trackingCode}*\n\n✅ Dark Daulat AI ke through best deals milti hain!`;
       toast.success(
-        "Tracking link bana! 'Meri Claims' mein jaake purchase confirm karo.",
+        "Tracking link bana! Jab koi is link se khareedega to 2% aapko milega.",
         {
           duration: 4000,
           action: {
@@ -987,14 +987,9 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
         : "https://www.amazon.in";
     window.open(targetUrl, "_blank");
 
-    try {
-      await trackShare.mutateAsync(deal.id);
-      toast.success("Deal khul gayi! Commission track ho raha hai 📊", {
-        duration: 2000,
-      });
-    } catch {
-      // Don't fail the buy flow if tracking fails
-    }
+    toast.success("Deal khul gayi! Ab affiliate site se khareedein.", {
+      duration: 2000,
+    });
   };
 
   // User earns 2% of purchase price (admin gets 3%, total 5% commission split)
@@ -1346,19 +1341,19 @@ export default function DealsPage() {
               <div className="grid grid-cols-3 gap-2">
                 {[
                   {
-                    icon: "🛒",
-                    label: "Buy Karo",
-                    desc: "Link pe jao, khareedari karo → commission milegi",
-                  },
-                  {
                     icon: "📢",
                     label: "Share Karo",
-                    desc: "Deal share karo, koi bhi khareedeta hai → aapko commission",
+                    desc: "Deal share karo → tracking link milega",
+                  },
+                  {
+                    icon: "🛒",
+                    label: "Koi Buy Kare",
+                    desc: "Aapke link se khareedari ho → aapko 2% commission",
                   },
                   {
                     icon: "💰",
-                    label: "Admin 2%",
-                    desc: "Platform maintain karne ke liye 2% admin ko",
+                    label: "5% Split",
+                    desc: "User 2% + Admin 3% = Har purchase pe total 5%",
                   },
                 ].map(({ icon, label, desc }) => (
                   <div key={label} className="text-center">

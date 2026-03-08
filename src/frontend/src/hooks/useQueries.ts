@@ -213,13 +213,40 @@ export function useRegister() {
       mobile: string;
       referralCode: string | null;
     }) => {
-      if (!actor) throw new Error("Actor not ready. Dobara try karein.");
+      // Wait for actor to become ready -- retry up to 10 times with 800ms delay
+      let readyActor = actor;
+      if (!readyActor) {
+        for (let i = 0; i < 10; i++) {
+          await new Promise((r) => setTimeout(r, 800));
+          // Re-read actor from query cache
+          const cached = qc.getQueryData<typeof actor>(["actor"]);
+          if (cached) {
+            readyActor = cached;
+            break;
+          }
+          // Try all actor keys (identity-specific)
+          const allActorKeys = qc.getQueriesData<typeof actor>({
+            queryKey: ["actor"],
+          });
+          for (const [, data] of allActorKeys) {
+            if (data) {
+              readyActor = data;
+              break;
+            }
+          }
+          if (readyActor) break;
+        }
+      }
+      if (!readyActor)
+        throw new Error(
+          "Backend se connection nahi hua. Internet check karo aur dobara try karo.",
+        );
       // Pass null directly for optional text -- the ICP SDK handles Candid encoding
       const refCode: string | null = referralCode?.trim()
         ? referralCode.trim()
         : null;
       try {
-        await actor.register(name, email, mobile, refCode);
+        await readyActor.register(name, email, mobile, refCode);
       } catch (err) {
         const msg = String(err);
         if (msg.includes("already registered")) {
@@ -543,6 +570,7 @@ export function useSaveAdminAffiliateSettings() {
 
 export function useGenerateOtp() {
   const { actor } = useActor();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
       email,
@@ -551,8 +579,24 @@ export function useGenerateOtp() {
       email: string;
       mobile: string;
     }): Promise<string> => {
-      if (!actor) throw new Error("Actor not ready");
-      return actor.generateOtp(email, mobile);
+      let readyActor = actor;
+      if (!readyActor) {
+        for (let i = 0; i < 8; i++) {
+          await new Promise((r) => setTimeout(r, 600));
+          const allActorKeys = qc.getQueriesData<typeof actor>({
+            queryKey: ["actor"],
+          });
+          for (const [, data] of allActorKeys) {
+            if (data) {
+              readyActor = data;
+              break;
+            }
+          }
+          if (readyActor) break;
+        }
+      }
+      if (!readyActor) throw new Error("Actor not ready");
+      return readyActor.generateOtp(email, mobile);
     },
   });
 }
