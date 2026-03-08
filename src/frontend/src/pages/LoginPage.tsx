@@ -171,7 +171,7 @@ export default function LoginPage() {
     setRegisterError("");
   }, [checkTimeout, showRegister, refetchUser]);
 
-  // ── Step 1: Send OTP (with direct registration fallback) ─────────────────
+  // ── Step 1: Send OTP ─────────────────────────────────────────────────────
   const handleSendOtp = async () => {
     setRegisterError("");
     setOtpError("");
@@ -197,44 +197,45 @@ export default function LoginPage() {
         email: email.trim(),
         mobile: mobile.trim(),
       });
-      // Store the returned OTP for "show once" display
       setShownOtp(generatedOtp);
-      setOtpRevealCountdown(30); // Show OTP for 30 seconds
-      setOtpCode(generatedOtp); // Pre-fill OTP input for convenience
+      setOtpRevealCountdown(30);
+      setOtpCode(generatedOtp);
       setOtpCopied(false);
       setOtpStep("otp");
-      setOtpCountdown(600); // 10 minutes expiry
-      toast.success(
-        "OTP generate ho gaya! Neeche dikha raha hai -- copy karo ya yaad kar lo.",
-      );
-    } catch (err) {
-      // OTP generation failed — attempt direct registration as fallback
-      console.warn(
-        "OTP generation failed, attempting direct registration:",
-        err,
-      );
-      try {
-        await registerMutation.mutateAsync({
-          name: name.trim(),
-          email: email.trim(),
-          mobile: mobile.trim(),
-          referralCode: referralCode.trim() || null,
-        });
-        toast.success("Registration ho gayi! Welcome to Dark Daulat AI! 🎉");
-        setTimeout(() => navigate({ to: "/" }), 500);
-      } catch (regErr) {
-        const regMsg =
-          regErr instanceof Error ? regErr.message : String(regErr);
-        if (regMsg.includes("already registered")) {
-          toast.success("Aap already registered hain! Home pe ja rahe hain...");
-          setTimeout(() => navigate({ to: "/" }), 500);
-          return;
-        }
-        const displayMsg =
-          regMsg.length > 200 ? `${regMsg.substring(0, 200)}...` : regMsg;
-        setRegisterError(displayMsg);
-        toast.error("Registration fail hui. Dobara try karein.");
+      setOtpCountdown(600);
+      toast.success("OTP generate ho gaya! Neeche copy karo.");
+    } catch (_err) {
+      // OTP generation may fail on anonymous principal — skip OTP, register directly
+      setRegisterError("");
+      await handleDirectRegister();
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // ── Direct Register (skip OTP when OTP generation fails) ─────────────────
+  const handleDirectRegister = async () => {
+    setOtpLoading(true);
+    try {
+      await registerMutation.mutateAsync({
+        name: name.trim(),
+        email: email.trim(),
+        mobile: mobile.trim(),
+        referralCode: referralCode.trim() || null,
+      });
+      toast.success("Registration ho gayi! Welcome to Dark Daulat AI!");
+      setTimeout(() => navigate({ to: "/" }), 600);
+    } catch (regErr) {
+      const regMsg = regErr instanceof Error ? regErr.message : String(regErr);
+      if (regMsg.includes("already registered")) {
+        toast.success("Aap already registered hain! Ja rahe hain...");
+        setTimeout(() => navigate({ to: "/" }), 600);
+        return;
       }
+      const displayMsg =
+        regMsg.length > 250 ? `${regMsg.substring(0, 250)}...` : regMsg;
+      setRegisterError(displayMsg);
+      toast.error("Registration fail hui. Error dekho aur dobara try karo.");
     } finally {
       setOtpLoading(false);
     }
@@ -262,7 +263,7 @@ export default function LoginPage() {
         return;
       }
 
-      // OTP valid → register now
+      // OTP valid → register now (plain null, not array)
       await registerMutation.mutateAsync({
         name: name.trim(),
         email: email.trim(),
@@ -270,19 +271,18 @@ export default function LoginPage() {
         referralCode: referralCode.trim() || null,
       });
 
-      toast.success("Registration ho gayi! Welcome to Dark Daulat AI! 🎉");
-      setTimeout(() => navigate({ to: "/" }), 500);
+      toast.success("Registration ho gayi! Welcome to Dark Daulat AI!");
+      setTimeout(() => navigate({ to: "/" }), 600);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       if (errMsg.includes("already registered")) {
-        toast.success("Aap already registered hain! Home pe ja rahe hain...");
-        setTimeout(() => navigate({ to: "/" }), 500);
+        toast.success("Aap already registered hain! Ja rahe hain...");
+        setTimeout(() => navigate({ to: "/" }), 600);
         return;
       }
       const displayMsg =
-        errMsg.length > 200 ? `${errMsg.substring(0, 200)}...` : errMsg;
+        errMsg.length > 250 ? `${errMsg.substring(0, 250)}...` : errMsg;
       setRegisterError(displayMsg);
-      // Go back to form on non-OTP errors
       if (!errMsg.toLowerCase().includes("otp")) {
         setOtpStep("form");
       }

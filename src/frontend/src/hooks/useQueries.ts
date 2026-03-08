@@ -213,29 +213,14 @@ export function useRegister() {
       mobile: string;
       referralCode: string | null;
     }) => {
-      console.log("[useRegister] mutationFn called", {
-        name,
-        email,
-        mobile,
-        referralCode,
-      });
       if (!actor) throw new Error("Actor not ready. Dobara try karein.");
-      // ICP Candid ?Text must be encoded as [] (None) or [string] (Some)
-      // Using JS null directly causes "Invalid opt text argument" errors
-      // Using [] | [string] array format ensures correct Candid encoding
-      const refCode: [] | [string] = referralCode?.trim()
-        ? [referralCode.trim()]
-        : [];
+      // Pass null directly for optional text -- the ICP SDK handles Candid encoding
+      const refCode: string | null = referralCode?.trim()
+        ? referralCode.trim()
+        : null;
       try {
-        await actor.register(
-          name,
-          email,
-          mobile,
-          refCode as unknown as string | null,
-        );
+        await actor.register(name, email, mobile, refCode);
       } catch (err) {
-        console.error("[useRegister] Backend error:", err);
-        // Extract meaningful error from Candid reject
         const msg = String(err);
         if (msg.includes("already registered")) {
           throw new Error("already registered");
@@ -243,16 +228,14 @@ export function useRegister() {
         if (msg.includes("Cannot use your own referral")) {
           throw new Error("Aap apna referral code use nahi kar sakte.");
         }
-        // Raw candid errors often have "Reject text:" prefix
         const rejectMatch = msg.match(/Reject text: (.+?)(?:\n|$)/);
         if (rejectMatch) throw new Error(rejectMatch[1]);
         const trapMatch = msg.match(/trap: (.+?)(?:\n|$)/i);
         if (trapMatch) throw new Error(trapMatch[1]);
-        throw new Error(`Registration fail hui: ${msg.slice(0, 120)}`);
+        throw new Error(`Registration fail hui: ${msg.slice(0, 200)}`);
       }
     },
     onSuccess: () => {
-      // Invalidate and force re-fetch user data
       qc.invalidateQueries({ queryKey: ["user"] });
       qc.refetchQueries({ queryKey: ["user"] });
     },
