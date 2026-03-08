@@ -16,12 +16,15 @@ import AdminPage from "./pages/AdminPage";
 import CalculatorPage from "./pages/CalculatorPage";
 import ChatPage from "./pages/ChatPage";
 import DealsPage from "./pages/DealsPage";
+import DisclaimerPage from "./pages/DisclaimerPage";
 import HomePage from "./pages/HomePage";
 import KycPage from "./pages/KycPage";
 import LoginPage from "./pages/LoginPage";
 import MyClaimsPage from "./pages/MyClaimsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ProfilePage from "./pages/ProfilePage";
 import SharePage from "./pages/SharePage";
+import TermsPage from "./pages/TermsPage";
 import WalletPage from "./pages/WalletPage";
 
 // ─── Loading Screen ───────────────────────────────────────────────────────────
@@ -188,6 +191,24 @@ const myClaimsRoute = createRoute({
   component: MyClaimsPage,
 });
 
+const disclaimerRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/disclaimer",
+  component: DisclaimerPage,
+});
+
+const privacyRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/privacy",
+  component: PrivacyPolicyPage,
+});
+
+const termsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/terms",
+  component: TermsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appLayoutRoute.addChildren([
@@ -200,6 +221,9 @@ const routeTree = rootRoute.addChildren([
     chatRoute,
     kycRoute,
     myClaimsRoute,
+    disclaimerRoute,
+    privacyRoute,
+    termsRoute,
   ]),
   adminRoute,
 ]);

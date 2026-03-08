@@ -859,8 +859,28 @@ export default function ProfilePage() {
           <ChevronRight size={16} style={{ color: "oklch(0.68 0.22 25)" }} />
         </motion.button>
 
+        {/* Policy Links */}
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-1">
+          {[
+            { label: "Disclaimer", to: "/disclaimer" },
+            { label: "Privacy Policy", to: "/privacy" },
+            { label: "Terms of Service", to: "/terms" },
+          ].map(({ label, to }) => (
+            <button
+              key={to}
+              type="button"
+              onClick={() => navigate({ to: to as "/" })}
+              data-ocid={`profile.${label.toLowerCase().replace(/ /g, "_")}_link`}
+              className="text-[11px] underline underline-offset-2 transition-opacity hover:opacity-80"
+              style={{ color: "oklch(0.62 0.09 85)" }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Footer */}
-        <div className="text-center pt-2">
+        <div className="text-center pt-1 pb-2">
           <p className="text-[10px]" style={{ color: "oklch(0.30 0.01 85)" }}>
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
             <a

@@ -74,9 +74,12 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Outfit", "Sora", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Sora", "Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Sora", "Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
         body: ["Sora", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      fontWeight: {
+        default: "500",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -87,9 +90,10 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        gold: "0 0 20px oklch(0.78 0.12 85 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5)",
-        "gold-sm": "0 0 10px oklch(0.78 0.12 85 / 0.2), 0 2px 6px oklch(0 0 0 / 0.4)",
+        gold: "0 0 20px oklch(0.80 0.13 85 / 0.35), 0 4px 12px oklch(0 0 0 / 0.5)",
+        "gold-sm": "0 0 10px oklch(0.80 0.13 85 / 0.25), 0 2px 6px oklch(0 0 0 / 0.4)",
         "card-dark": "0 4px 24px oklch(0 0 0 / 0.6), 0 1px 3px oklch(0 0 0 / 0.3)",
+        "card-glow": "0 0 0 1px oklch(0.80 0.13 85 / 0.3), 0 0 20px oklch(0.80 0.13 85 / 0.15), 0 8px 32px oklch(0 0 0 / 0.6)",
       },
       keyframes: {
         "accordion-down": {
@@ -112,6 +116,18 @@ export default {
           from: { opacity: "0", transform: "scale(0.95)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "pulse-gold": {
+          "0%, 100%": { boxShadow: "0 0 10px oklch(0.80 0.13 85 / 0.3)" },
+          "50%": { boxShadow: "0 0 28px oklch(0.90 0.16 85 / 0.65)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": {
+            textShadow: "0 0 10px oklch(0.90 0.16 85 / 0.5), 0 0 20px oklch(0.80 0.13 85 / 0.3)",
+          },
+          "50%": {
+            textShadow: "0 0 20px oklch(0.95 0.18 88 / 0.8), 0 0 40px oklch(0.80 0.13 85 / 0.5)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -119,6 +135,8 @@ export default {
         shimmer: "shimmer 2s infinite",
         "fade-up": "fade-up 0.4s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
+        "pulse-gold": "pulse-gold 2s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 2.5s ease-in-out infinite",
       },
     },
   },

@@ -1115,8 +1115,26 @@ export default function LoginPage() {
           )}
         </motion.div>
 
+        {/* Policy Links */}
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-5">
+          {[
+            { label: "Disclaimer", path: "/disclaimer" },
+            { label: "Privacy Policy", path: "/privacy" },
+            { label: "Terms of Service", path: "/terms" },
+          ].map(({ label, path }) => (
+            <a
+              key={path}
+              href={path}
+              className="text-[11px] underline underline-offset-2 transition-opacity hover:opacity-80"
+              style={{ color: "oklch(0.55 0.08 85)" }}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
         <p
-          className="text-center text-xs mt-6"
+          className="text-center text-xs mt-3"
           style={{ color: "oklch(0.35 0.01 85)" }}
         >
           © {new Date().getFullYear()} Dark Daulat AI. Built with{" "}
